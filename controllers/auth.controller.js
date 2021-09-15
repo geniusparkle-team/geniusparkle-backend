@@ -4,7 +4,6 @@ var bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 const fetchP = import('node-fetch').then(mod => mod.default)
 const fetch = (...args) => fetchP.then(fn => fn(...args))
-const { catchAsync } = require('../utils.js');
 
 module.exports.signup = async (req, res) => {
   try {
