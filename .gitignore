@@ -1,0 +1,7 @@
+# Keep environment variables out of version control
+.env
+# local file
+node_modules
+package-lock.json
+.vscode
+migrations
