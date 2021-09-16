@@ -4,6 +4,8 @@ var bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 const fetchP = import('node-fetch').then(mod => mod.default)
 const fetch = (...args) => fetchP.then(fn => fn(...args))
+const nodemailer = require('nodemailer');
+const smtpTransport = require('nodemailer-smtp-transport');
 
 module.exports.signup = async (req, res) => {
   try {
@@ -40,19 +42,54 @@ module.exports.signup = async (req, res) => {
       });
     } else {
       var salt = bcrypt.genSaltSync(10);
-      var hash = bcrypt.hashSync(req.body.password, salt);
-
+      var hashPass = bcrypt.hashSync(req.body.password, salt);
+      var hashMail = bcrypt.hashSync(req.body.email, salt);
+      const tokenVerify = jwt.sign({ email: req.body.email }, process.env.secretOrKey, {
+        expiresIn: 7200,
+      });
       const account = await prisma.account.create({
         data: {
           name: req.body.name,
           email: req.body.email,
-          password: hash,
+          password: hashPass,
           gender: req.body.gender,
-          birthday: req.body.birthday
+          birthday: req.body.birthday,
+          tokenVerify: hashMail
         },
       });
 
-      res.json({ ok: true, message: "Signup successfully!" });
+      // config mail server
+      const transporter = nodemailer.createTransport(smtpTransport({
+        host: 'mail.geniusparkle.com',
+        secureConnection: false,
+        tls: {
+          rejectUnauthorized: false
+        },
+        port: 465,
+        auth: {
+          user: process.env.EMAIL_USERNAME,
+          pass: process.env.EMAIL_PASSWORD,
+        }
+      }));
+
+      var urlVerify = "http://localhost:8080/api/mail/verify?token=" + tokenVerify;
+
+      var content = '';
+      content += `Hi ` + account.name + `,<br>
+      Welcome to GeniuSparkle! Click on the link below to verify your account:<br>
+      <a href="`+ urlVerify + `">` + urlVerify + `</a>
+      `;
+
+      var mainOptions = {
+        from: process.env.EMAIL_USERNAME,
+        to: req.body.email,
+        subject: 'Account verification',
+        text: '',
+        html: content
+      };
+      const sendMail = await transporter.sendMail(mainOptions);
+
+      return res.json({ ok: true, message: "Signup successfully!" });
     }
   }
   catch (error) {
@@ -111,7 +148,8 @@ module.exports.loginDiscord = async (req, res) => {
             name: json.username,
             email: json.email,
             password: hash,
-            otherData: "discordId: " + json.id
+            otherData: "discordId: " + json.id,
+            verify: true
           },
         });
       }
@@ -167,6 +205,15 @@ module.exports.login = async (req, res) => {
     if (email) {
       var isRightPass = bcrypt.compareSync(req.body.password, email.password);
       if (isRightPass) {
+        // check verify
+        if (!email.verify) {
+          return res.status(400).json({ 
+            ok: false,
+            verify: false,
+            message: "The account is not verify yet!" 
+          });
+        };
+
         // create and assign a token
         const token = jwt.sign({ id: email.email }, process.env.secretOrKey, {
           expiresIn: 86400,
