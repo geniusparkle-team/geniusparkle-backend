@@ -61,7 +61,7 @@ module.exports.signup = async (req, res) => {
         }
       });
 
-      var urlVerify = "http://localhost:8080/api/mail/verify?token=" + tokenVerify;
+      var urlVerify = "https://genius-park-stag.herokuapp.com/api/mail/verify?token=" + tokenVerify;
 
       var content = '';
       content += '<p style="font-size: 14px; line-height: 170%;">' +
