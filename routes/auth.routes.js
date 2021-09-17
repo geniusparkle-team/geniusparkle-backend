@@ -9,5 +9,4 @@ router.post('/signup', signup);
 
 router.post('/loginDiscord', loginDiscord);
 
-
 module.exports = router;
