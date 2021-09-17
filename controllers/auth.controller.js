@@ -75,13 +75,20 @@ module.exports.signup = async (req, res) => {
       var urlVerify = "http://localhost:8080/api/mail/verify?token=" + tokenVerify;
 
       var content = '';
-      content += `Hi ` + account.name + `,<br>
-      Welcome to GeniuSparkle! Click on the link below to verify your account:<br>
-      <a href="`+ urlVerify + `">` + urlVerify + `</a>
-      `;
+      content += '<p style="font-size: 14px; line-height: 170%;">' +
+        '<span style="font-size: 16px; line-height: 27.2px;">Hi ' + account.name + `,  </span></p>
+      <p style="font-size: 14px; line-height: 170%;">
+      <span style="font-size: 16px; line-height: 27.2px;">Welcome to GeniuSparkle! Click on the button below to verify your account:
+      </span></p>
+      <a href="`+ urlVerify + `" target="_blank" style="box-sizing: border-box;display: inline-block;font-family:arial,helvetica,sans-serif;
+      text-decoration: none;-webkit-text-size-adjust: none;text-align: center;color: #FFFFFF; background-color: #094c54; border-radius: 4px;
+      -webkit-border-radius: 4px;
+      -moz-border-radius: 4px; width:auto; max-width:100%; overflow-wrap: break-word; word-break: break-word; word-wrap:break-word; mso-border-alt: none;">
+      <span style="display:block;padding:13px 30px;line-height:120%;"><span style="font-size: 16px; line-height: 19.2px;">Verify account</span></span>
+      </a>`;
 
       var mainOptions = {
-        from: process.env.EMAIL_USERNAME,
+        from: "GeniuSparkle " + "<" + process.env.EMAIL_USERNAME + ">",
         to: req.body.email,
         subject: 'Account verification',
         text: '',
@@ -93,12 +100,10 @@ module.exports.signup = async (req, res) => {
     }
   }
   catch (error) {
-    console.log(error)
     res.status(500).json({
       ok: false,
       error: "Something went wrong!"
     });
-
   }
   finally {
     async () =>
@@ -133,8 +138,6 @@ module.exports.loginDiscord = async (req, res) => {
 
     const json = await response2.json();
 
-    console.log(json)
-
     if (json.email) {
       // check email exist
       const email = await prisma.account.findUnique({
@@ -168,7 +171,6 @@ module.exports.loginDiscord = async (req, res) => {
     }
   }
   catch (error) {
-    console.log(error)
     res.status(500).json({
       ok: false,
       error: "Something went wrong!"
@@ -207,10 +209,10 @@ module.exports.login = async (req, res) => {
       if (isRightPass) {
         // check verify
         if (!email.verify) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             ok: false,
             verify: false,
-            message: "The account is not verify yet!" 
+            message: "The account is not verify yet!"
           });
         };
 
@@ -218,7 +220,6 @@ module.exports.login = async (req, res) => {
         const token = jwt.sign({ id: email.email }, process.env.secretOrKey, {
           expiresIn: 86400,
         });
-        res.setHeader("Authentication", token);
         res.status(200).json({
           ok: "true",
           data: { token: "Bearer " + token }
@@ -228,6 +229,63 @@ module.exports.login = async (req, res) => {
       }
     } else {
       res.status(400).json({ ok: false, message: "Wrong email!" });
+    }
+  }
+  catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Something went wrong!"
+    });
+
+  }
+  finally {
+    async () =>
+      await prisma.$disconnect()
+  }
+}
+
+module.exports.resetPass = async (req, res) => {
+  try {
+    var error = [];
+
+    if (!req.body.email) {
+      error.push("email");
+    };
+    if (!req.body.password) {
+      error.push("password");
+    };
+    if (!(error.length === 0)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Please input: " + error
+      });
+    };
+
+    if (!(req.user.email === req.body.email)) {
+      return res.status(403).json({
+        ok: false,
+        error: "Access denied"
+      });
+    };
+    const email = await prisma.account.findUnique({
+      where: {
+        email: req.body.email
+      }
+    });
+    if (email) {
+      var salt = bcrypt.genSaltSync(10);
+      var hashPass = bcrypt.hashSync(req.body.password, salt);
+      const updateAccount = await prisma.account.update({
+        where: {
+          email: req.body.email,
+        },
+        data: {
+          password: hashPass,
+        }
+      });
+      return res.json({ ok: true, message: "Update password successfully!" });
+    } else {
+      return res.status(400).json({ ok: false, message: "Wrong email!" });
     }
   }
   catch (error) {
