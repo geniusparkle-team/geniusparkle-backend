@@ -32,7 +32,11 @@ app.get('/', (req, res) => {
 
 // auth routes
 const authRouter = require('./routes/auth.routes');
-app.use('/api', authRouter);
+app.use('/api/auth', authRouter);
+
+// mail routes
+const mailRouter = require('./routes/mail.routes');
+app.use('/api/mail', mailRouter);
 
 // listen for requests
 app.listen(port, () => {
