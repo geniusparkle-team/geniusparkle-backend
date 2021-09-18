@@ -26,6 +26,20 @@ model account {
   updateDate  DateTime @default(now()) @updatedAt @db.Timestamp(6)
   accRole     String   @default("user") @db.VarChar(45)
   note        String?  @db.Text
+
+  videos video[] // List of Imported Videos
+}
+
+model video {
+  id            String   @db.VarChar(11)
+  title         String
+  description   String?
+  uploaded_date DateTime @default(now()) @db.Timestamp(6)
+  embedded      String   @db.Text
+  account       account  @relation(fields: [accountId], references: [id])
+  accountId     Int
+
+  @@id([id])
 }
 
 enum Gender {
