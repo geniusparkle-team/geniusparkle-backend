@@ -30,6 +30,10 @@ app.get('/', (req, res) => {
     res.json({ "message": "genius-park-api" });
 });
 
+// Handle oauth callbacks
+const oauthRouter = require('./routes/oauth.routes')
+app.use('/oauth/', oauthRouter)
+
 // auth routes
 const authRouter = require('./routes/auth.routes');
 app.use('/api/auth', authRouter);
