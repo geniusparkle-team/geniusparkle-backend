@@ -3,9 +3,50 @@ const jwt = require('jsonwebtoken')
 const { PrismaClient } = require('@prisma/client')
 
 const { getGoogleAccountInfo, getGoogleTokens } = require('../helpers/google-oauth')
-const { base64ToStr, promiseWrapper } = require('../utils/generic')
+const { base64ToStr, promiseWrapper, strToBase64 } = require('../utils/generic')
 
 const prisma = new PrismaClient()
+
+// Generate google oauth url and redirect user to it
+const googleOauth = async (request, response) => {
+    const { finished, action } = request.query
+    const scope = [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/youtube',
+        'https://www.googleapis.com/auth/youtube.force-ssl',
+    ]
+
+    if (!finished) {
+        return response.status(400).end('Invalid Request')
+    }
+
+    if (action === 'connect' && (!request.user || !request.token)) {
+        return response.status(401).end('UnAuthenticated')
+    }
+    
+    const state = { finished }
+    const host = `${request.protocol}://${request.get('host')}/`
+    const oauthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+    const redirectUrl = new URL(host)
+
+    oauthUrl.searchParams.append('client_id', process.env.google_client_id)
+    oauthUrl.searchParams.append('response_type', 'code')
+    oauthUrl.searchParams.append('scope', scope.join(' '))
+    oauthUrl.searchParams.append('access_type', 'offline')
+    
+    if (action === 'connect') {
+        state.token = request.token
+        oauthUrl.searchParams.append('redirect_uri', 'offline')
+    } else {
+        redirectUrl.pathname = '/oauth/google/callback'
+    }
+    
+    oauthUrl.searchParams.append('state', strToBase64(JSON.stringify(state)))
+    oauthUrl.searchParams.append('redirect_uri', redirectUrl.href)
+
+    response.redirect(oauthUrl.href)
+}
 
 const googleOauthCallback = async (request, response) => {
     const { code, state } = request.query
@@ -75,4 +116,5 @@ const googleOauthCallback = async (request, response) => {
 
 module.exports = {
     googleOauthCallback,
+    googleOauth
 }

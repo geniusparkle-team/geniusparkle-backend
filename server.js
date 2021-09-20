@@ -25,6 +25,10 @@ app.use(function(err, req, res, next) {
 
 });
 
+// Authentication Checker
+const { authentication } = require('./middlewares/auth.middleware')
+app.use(authentication)
+
 // define a simple route
 app.get('/', (req, res) => {
     res.json({ "message": "genius-park-api" });
