@@ -37,7 +37,7 @@ const googleOauth = async (request, response) => {
     
     if (action === 'connect') {
         state.token = request.token
-        oauthUrl.searchParams.append('redirect_uri', 'offline')
+        redirectUrl.pathname = '/oauth/google/connect-callback'
     } else {
         redirectUrl.pathname = '/oauth/google/callback'
     }
@@ -48,6 +48,97 @@ const googleOauth = async (request, response) => {
     response.redirect(oauthUrl.href)
 }
 
+// Connect a existing account with a oauth google account
+const googleOauthConnect = async (request, response) => {
+    const { state, code } = request.query
+    let parsedState, token, payload
+
+    try {
+        parsedState = JSON.parse(base64ToStr(state))
+    } catch {}
+
+    if (!code || !parsedState || !parsedState.token || !parsedState.finished) {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+
+    token = parsedState?.token
+
+    try {
+        payload = jwt.verify(token, process.env.secretOrKey)
+    } catch {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+    
+    if (!payload.id) {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+
+    // Get account based on token
+    const account = await prisma.account.findUnique({
+        where: {
+            email: payload.id
+        }
+    })
+
+    if (!account) {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+
+    const [data, error] = await promiseWrapper(getGoogleTokens(code))
+
+    if (!data || !data.access_token || !data.refresh_token) {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+
+    const [profileData, profileDataError] = await promiseWrapper(
+        getGoogleAccountInfo(data.access_token)
+    )
+
+    if (!profileData || !profileData.email || !profileData.name) {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+
+    // Check if the connected email is used before
+    if (payload.id !== profileData.email) {
+        const otherAccounts = await prisma.account.findMany({
+            where: {
+                AND: [
+                    {
+                        email: profileData.email
+                    },
+                    {
+                        NOT: {
+                            email: account.email
+                        }
+                    }
+                ]
+            }
+        })
+
+        if (otherAccounts.length > 0) {
+            return response.status(400).end('Invalid Response Received from Google')
+        }
+    }
+
+    await prisma.account.update({
+        where: {
+            email: payload.id
+        },
+        data: {
+            googleTokens: {
+                refresh_token: data.refresh_token,
+                access_token: data.access_token,
+                access_token_expires: new Date(
+                    Date.now() + data.expires_in * 1000
+                ),
+            },
+        }
+    })
+
+    response.redirect(parsedState.finished)    
+}
+
+// Login/Sign-up using oauth
 const googleOauthCallback = async (request, response) => {
     const { code, state } = request.query
     let parsedState = null
@@ -116,5 +207,6 @@ const googleOauthCallback = async (request, response) => {
 
 module.exports = {
     googleOauthCallback,
-    googleOauth
+    googleOauth,
+    googleOauthConnect,
 }
