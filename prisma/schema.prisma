@@ -28,6 +28,16 @@ model account {
   note        String?  @db.Text
 
   googleTokens Json? @db.Json
+  videos Video[]
+}
+
+model Video {
+  id Int @id @default(autoincrement()) // Should be changes to what ever youtube videoId
+  title String
+  thumbnails String @db.Text
+  description String? @db.Text
+  account account @relation(fields: [accountId], references: [id])
+  accountId Int
 }
 
 enum Gender {
