@@ -26,7 +26,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Authentication Checker
-const { authentication } = require('./middlewares/auth.middleware')
+const { authentication, authenticatedOnly } = require('./middlewares/auth.middleware')
 app.use(authentication)
 
 // define a simple route
@@ -45,6 +45,11 @@ app.use('/api/auth', authRouter);
 // mail routes
 const mailRouter = require('./routes/mail.routes');
 app.use('/api/mail', mailRouter);
+
+// Videos Api Routes
+const videosRouter = require('./routes/videos.routes');
+const { verrifyGoogleTokens, googleOauthRequired } = require('./middlewares/google-oauth.middleware');
+app.use('/api/videos', authenticatedOnly, verrifyGoogleTokens, googleOauthRequired, videosRouter)
 
 // listen for requests
 app.listen(port, () => {

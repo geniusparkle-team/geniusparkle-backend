@@ -27,7 +27,25 @@ const getGoogleAccountInfo = async (token) => {
     return response.data
 }
 
+const refreshGoogleAccessToken = async (refresh_token) => {
+    const refreshUrl = 'https://oauth2.googleapis.com/token'
+    const data = new URLSearchParams()
+    data.append('client_id', process.env.google_client_id)
+    data.append('client_secret', process.env.google_client_secret)
+    data.append('grant_type', 'refresh_token')
+    data.append('refresh_token', refresh_token)
+
+    const response = await axios.post(refreshUrl, data, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    })
+
+    return response.data
+}
+
 module.exports = {
     getGoogleTokens,
     getGoogleAccountInfo,
+    refreshGoogleAccessToken
 }
