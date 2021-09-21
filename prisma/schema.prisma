@@ -36,10 +36,10 @@ model account {
 model Video {
   id          String     @id
   title       String
-  thumbnails  String  @db.Text
+  thumbnail  String  @db.Text
   description String? @db.Text
   account     account @relation(fields: [accountId], references: [id])
-  accountId   Int
+  accountId   Int 
 }
 
 enum Gender {

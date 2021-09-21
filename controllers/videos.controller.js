@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 
-const { getChannelInfoOfToken, getVideosOfPlaylist } = require('../helpers/youtube-api')
+const { getChannelInfoOfToken, getVideosOfPlaylist, getVideosData } = require('../helpers/youtube-api')
 const { promiseWrapper } = require('../utils/generic')
 
 const prisma = new PrismaClient()
@@ -22,7 +22,7 @@ const getAllVideos = async (request, response) => {
     if (!playlistId) {
         const [channelInfo, channelError] = await promiseWrapper(getChannelInfoOfToken(access_token))
         
-        if (!channelInfo && channelInfo?.items?.length >= 0) {
+        if (!channelInfo || channelInfo?.items?.length <= 0) {
             return response.status(500).json({
                 ok: false,
                 error: 'Something went wrong!',
@@ -78,6 +78,79 @@ const getAllVideos = async (request, response) => {
     response.end(JSON.stringify(responseData, null, 4))
 }
 
+// Import or/and remove videos from youtube
+const importRemoveVideos = async (request, response) => {
+    const { import: toImport, remove } = request.body
+
+    if ((!toImport && !remove) ||
+        (toImport && !(toImport instanceof Array)) ||
+        (remove && !(remove instanceof Array))
+    ) {
+        return response.json({
+            ok: false,
+            error: 'Invalid Request',
+        })
+    }
+
+    let itemsToImport = []
+
+    if (toImport && toImport.length > 0) {
+        const [videosData, error] = await promiseWrapper(getVideosData(toImport, request.token))
+
+        if (!videosData || videosData?.items?.length <= 0) {
+            return response.json({
+                ok: false,
+                error: 'Invalid Request',
+            })
+        }
+
+        itemsToImport = videosData.items
+    }
+
+    let actions = []
+
+    if (itemsToImport.length > 0) {
+        actions.push(
+            prisma.video.createMany({
+                data: itemsToImport.map((video) => {
+                    const videoData = {}
+                    videoData.id = video.id
+                    videoData.title = video.snippet.title
+                    videoData.description = video.snippet.description
+                    videoData.thumbnail = video.snippet.thumbnails.standard.url
+                    videoData.accountId = request.user.id
+
+                    return videoData
+                }),
+            })
+        )
+    }
+
+    if (remove && remove.length > 0) {
+        actions.push(prisma.video.deleteMany({
+            where: {
+                id: {
+                    in: remove
+                }
+            }
+        }))
+    }
+
+    try {
+        await prisma.$transaction(actions)
+    } catch (error) {
+        console.log(error)
+        return response.json({
+            ok: false,
+            error: 'Something Went Wrong',
+        })
+    }
+
+
+    response.status(204).end()
+}
+
 module.exports = {
-    getAllVideos
+    getAllVideos,
+    importRemoveVideos
 }

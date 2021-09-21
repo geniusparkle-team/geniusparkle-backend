@@ -2,7 +2,6 @@ const { PrismaClient } = require('@prisma/client')
 
 const { isExpired, promiseWrapper } = require('../utils/generic')
 const { refreshGoogleAccessToken } = require('../helpers/google-oauth')
-const { response } = require('express')
 
 const prisma = new PrismaClient()
 
