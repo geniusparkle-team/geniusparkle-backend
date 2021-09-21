@@ -1,13 +1,13 @@
 const { default:axios } = require('axios')
 
-const getGoogleTokens = async (code) => {
+const getGoogleTokens = async (code, redirect_uri) => {
     const tokensUrl = 'https://oauth2.googleapis.com/token'
     const data = new URLSearchParams()
     data.append('client_id', process.env.google_client_id)
     data.append('client_secret', process.env.google_client_secret)
     data.append('code', code)
     data.append('grant_type', 'authorization_code')
-    data.append('redirect_uri', 'http://localhost:8080/oauth/google/callback')
+    data.append('redirect_uri', redirect_uri)
 
     const response = await axios.post(tokensUrl, data, {
         headers: {

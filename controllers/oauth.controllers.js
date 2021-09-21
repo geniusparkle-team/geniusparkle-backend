@@ -22,6 +22,7 @@ const googleOauth = async (request, response) => {
     }
 
     if (action === 'connect' && (!request.user || !request.token)) {
+        console.log('user', request.user)
         return response.status(401).end('UnAuthenticated')
     }
     
@@ -41,6 +42,8 @@ const googleOauth = async (request, response) => {
     } else {
         redirectUrl.pathname = '/oauth/google/callback'
     }
+
+    console.log('redirect => ', redirectUrl.href)
     
     oauthUrl.searchParams.append('state', strToBase64(JSON.stringify(state)))
     oauthUrl.searchParams.append('redirect_uri', redirectUrl.href)
@@ -58,6 +61,7 @@ const googleOauthConnect = async (request, response) => {
     } catch {}
 
     if (!code || !parsedState || !parsedState.token || !parsedState.finished) {
+        console.log(1)
         return response.status(400).end('Invalid Response Received from Google')
     }
 
@@ -66,10 +70,12 @@ const googleOauthConnect = async (request, response) => {
     try {
         payload = jwt.verify(token, process.env.secretOrKey)
     } catch {
+        console.log(2)
         return response.status(400).end('Invalid Response Received from Google')
     }
     
     if (!payload.id) {
+        console.log(3)
         return response.status(400).end('Invalid Response Received from Google')
     }
 
@@ -81,12 +87,19 @@ const googleOauthConnect = async (request, response) => {
     })
 
     if (!account) {
+        console.log(4)
         return response.status(400).end('Invalid Response Received from Google')
     }
 
-    const [data, error] = await promiseWrapper(getGoogleTokens(code))
+    // Redirect uri is required for each google oauth request
+    const redirectUrl = new URL(`${request.protocol}://${request.get('host')}/`)
+    redirectUrl.pathname = '/oauth/google/connect-callback'
+
+    const [data, error] = await promiseWrapper(getGoogleTokens(code, redirectUrl.href))
 
     if (!data || !data.access_token || !data.refresh_token) {
+        console.log('redireted from : ', redirectUrl.href)
+        console.log('data', JSON.stringify(error.response.data, null, 4))
         return response.status(400).end('Invalid Response Received from Google')
     }
 
@@ -95,6 +108,7 @@ const googleOauthConnect = async (request, response) => {
     )
 
     if (!profileData || !profileData.email || !profileData.name) {
+        console.log(6)
         return response.status(400).end('Invalid Response Received from Google')
     }
 
@@ -116,6 +130,7 @@ const googleOauthConnect = async (request, response) => {
         })
 
         if (otherAccounts.length > 0) {
+            console.log(7)
             return response.status(400).end('Invalid Response Received from Google')
         }
     }
@@ -153,7 +168,11 @@ const googleOauthCallback = async (request, response) => {
         return response.status(400).end('Invalid Response Received from Google')
     }
 
-    const [data, error] = await promiseWrapper(getGoogleTokens(code))
+    // Redirect uri is required for each google oauth request
+    const redirectUrl = new URL(`${request.protocol}://${request.get('host')}/`)
+    redirectUrl.pathname = '/oauth/google/callback'
+
+    const [data, error] = await promiseWrapper(getGoogleTokens(code, redirectUrl.href))
 
     if (!data || !data.access_token || !data.refresh_token) {
         return response.status(400).end('Invalid Response Received from Google')
