@@ -36,7 +36,7 @@ module.exports.authentication = async (req, res, next) => {
 }
 
 module.exports.authenticatedOnly = async (req, res, next) => {
-    if (!request.user) {
+    if (!req.user) {
         return res.status(401).json({ error: 'UnAuthorized' })
     }
 

@@ -21,8 +21,14 @@ const promiseWrapper = async (promise) => {
     return data
 } 
 
+const isExpired = (dateStr) => {
+    const expirationDate = new Date(dateStr)
+    return Date.now() >= expirationDate.getTime()
+} 
+
 module.exports = {
     base64ToStr,
     promiseWrapper,
-    strToBase64
+    strToBase64,
+    isExpired
 }
