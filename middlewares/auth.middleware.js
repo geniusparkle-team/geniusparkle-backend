@@ -10,9 +10,9 @@ require('dotenv').config()
 // and do different things on that
 
 module.exports.authentication = async (req, res, next) => {
-    let token = req.query?.token // ability to pass token into url query
+    let token = req.query?.access_token // ability to pass token into url query
 
-    if (req.headers.authentication && req.headers.authentication.startsWith('Bearer ')) {
+    if (!token && req.headers.authentication && req.headers.authentication.startsWith('Bearer ')) {
         token = req.headers.authentication.split('Bearer ')[1]
     }
 
@@ -22,14 +22,14 @@ module.exports.authentication = async (req, res, next) => {
         const data = jwt.verify(token, process.env.secretOrKey)
         const user = await prisma.account.findUnique({
             where: {
-                email: data.email,
+                email: data.id,
             },
         })
-
+        
         if (user) {
             req.token = token
             req.user = user
-        }
+        }   
     } catch (error) {}
 
     next()
