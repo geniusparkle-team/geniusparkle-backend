@@ -10,6 +10,15 @@ const getAllVideos = async (request, response) => {
     const { access_token } = request.user?.googleTokens
     let playlistId = request?.user?.youtubePlaylistId
 
+    const videos = await prisma.video.findMany({
+        where: {
+            accountId: request.user.id
+        },
+        select: { id : true }
+    })
+
+    const videosIds = videos.map(video => video.id)
+
     if (!playlistId) {
         const [channelInfo, channelError] = await promiseWrapper(getChannelInfoOfToken(access_token))
         
@@ -32,8 +41,6 @@ const getAllVideos = async (request, response) => {
                 youtubeChannelId: channelId
             }
         })
-
-        console.log('Got playlist')
     }
 
 
@@ -63,6 +70,7 @@ const getAllVideos = async (request, response) => {
         data.title = video.snippet.title
         data.description = video.snippet.description
         data.thumbnail = video.snippet.thumbnails.standard.url
+        data.imported = videosIds.includes(data.videoId)
 
         return data
     }).filter(video => video.isPublic)

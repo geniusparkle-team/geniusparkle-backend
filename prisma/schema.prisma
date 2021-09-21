@@ -34,7 +34,7 @@ model account {
 }
 
 model Video {
-  id          Int     @id @default(autoincrement()) // Should be changes to what ever youtube videoId
+  id          String     @id
   title       String
   thumbnails  String  @db.Text
   description String? @db.Text
