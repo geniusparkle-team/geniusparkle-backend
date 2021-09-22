@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 
-const { getComments, addComment } = require("../helpers/youtube-api")
+const { getComments, addComment, postReply } = require("../helpers/youtube-api")
 const { promiseWrapper } = require("../utils/generic")
 
 const prisma = new PrismaClient()
@@ -51,12 +51,10 @@ const addVideoComment = async (request, response) => {
     const { access_token } = request.user?.googleTokens || {}
 
     if (!content || content === '') {
-        if (!video) {
-            return response.status(404).json({
-                ok: false,
-                error: 'Invalid Request'
-            })
-        }
+        return response.status(404).json({
+            ok: false,
+            error: 'Invalid Request'
+        })
     }
 
     const video = await prisma.video.findUnique({
@@ -84,13 +82,13 @@ const addVideoComment = async (request, response) => {
         })
     }
 
-    const responseData = {}
-    responseData.id = data.id
-    responseData.videoId = data.snippet.videoId
-    responseData.authorDisplayName = data.snippet.topLevelComment.snippet.authorDisplayName
-    responseData.authorProfileImageUrl = data.snippet.topLevelComment.snippet.authorProfileImageUrl
-    responseData.authorChannelUrl = data.snippet.topLevelComment.snippet.authorChannelUrl
-    responseData.textOriginal = data.snippet.topLevelComment.snippet.textOriginal
+    const responseData = { ok : true, comment: {}}
+    responseData.comment.id = data.id
+    responseData.comment.videoId = data.snippet.videoId
+    responseData.comment.authorDisplayName = data.snippet.topLevelComment.snippet.authorDisplayName
+    responseData.comment.authorProfileImageUrl = data.snippet.topLevelComment.snippet.authorProfileImageUrl
+    responseData.comment.authorChannelUrl = data.snippet.topLevelComment.snippet.authorChannelUrl
+    responseData.comment.textOriginal = data.snippet.topLevelComment.snippet.textOriginal
 
     response.json(responseData)
 }
@@ -127,8 +125,39 @@ const getCommentReplays = async (request, response) => {
     response.json(responseData)
 }
 
-const addCommentReplay = (request, response) => {
-    response.json({ ok: false , error: 'Not Implemented'})
+const addCommentReplay = async (request, response) => {
+    const { id: parentId } = request.params
+    const { content } = request.body
+    const { access_token } = request.user?.googleTokens || {}
+
+    if (!content || content === '') {
+        return response.status(404).json({
+            ok: false,
+            error: 'Invalid Request'
+        })
+    }
+
+    const [data, error] = await promiseWrapper(
+        postReply(parentId, content, access_token)
+    )
+
+    if (!data) {
+        console.log(JSON.stringify(error?.response?.data, null, 4))
+        return response.status(404).json({
+            ok: false,
+            error: 'Comment doesn\'t exist.'
+        })
+    }
+
+    const responseData = { ok : true, comment: {}}
+    responseData.comment.id = data.id
+    responseData.comment.videoId = data.snippet.videoId
+    responseData.comment.authorDisplayName = data.snippet.authorDisplayName
+    responseData.comment.authorProfileImageUrl = data.snippet.authorProfileImageUrl
+    responseData.comment.authorChannelUrl = data.snippet.authorChannelUrl
+    responseData.comment.textOriginal = data.snippet.textOriginal
+
+    response.json(data)
 }
 
 const deleteComment = (request, response) => {

@@ -95,10 +95,33 @@ const addComment = async (videoId, channelId, content, access_token) => {
     return request.data
 }
 
+const postReply = async (parentId, content, access_token) => {
+    const commentUrl = new URL('https://www.googleapis.com/youtube/v3/comments')
+    const data = {
+        snippet: {
+            parentId,
+            textOriginal: content,
+        },
+    }
+
+    commentUrl.searchParams.append('part', ['id', 'snippet'].join(','))
+    commentUrl.searchParams.append('key', process.env.youtube_api_key)
+    commentUrl.searchParams.append('access_token', access_token)
+
+    const request = await axios.post(commentUrl.href, JSON.stringify(data), {
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+
+    return request.data
+}
+
 module.exports = {
     getChannelInfoOfToken,
     getVideosOfPlaylist,
     getVideosData,
     getComments,
-    addComment
+    addComment,
+    postReply
 }

@@ -13,7 +13,7 @@ router.get('/:id', videosControllers.getVideoDetails)
 router.get('/:id/comments', commentsControllers.getVideoComments)
 router.post('/:id/comments', googleOauthRequired, commentsControllers.addVideoComment)
 router.get('/comments/:id/replies', commentsControllers.getCommentReplays)
-// router.post('/comments/:id/replies')
+router.post('/comments/:id/replies', googleOauthRequired, commentsControllers.addCommentReplay)
 // router.delete('/comments/:id')
 // router.put('/comments/:id')
 
