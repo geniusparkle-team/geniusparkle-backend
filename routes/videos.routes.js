@@ -12,8 +12,8 @@ router.get('/:id', videosControllers.getVideoDetails)
 
 router.get('/:id/comments', commentsControllers.getVideoComments)
 // router.post('/:id/comments')
-// router.get('/comments/:id/replays')
-// router.post('/comments/:id/replays')
+router.get('/comments/:id/replies', commentsControllers.getCommentReplays)
+// router.post('/comments/:id/replies')
 // router.delete('/comments/:id')
 // router.put('/comments/:id')
 

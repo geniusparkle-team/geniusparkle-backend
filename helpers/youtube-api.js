@@ -71,5 +71,5 @@ module.exports = {
     getChannelInfoOfToken,
     getVideosOfPlaylist,
     getVideosData,
-    getComments
+    getComments,
 }

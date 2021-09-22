@@ -18,35 +18,63 @@ const getVideoComments = async (request, response) => {
 
     const responseData = {
         nextPageToken: commentsData.nextPageToken,
-        totalResults: commentsData.pageInfo.totalResults,
+        totalPages: commentsData.pageInfo.totalResults,
         resultsPerPage: commentsData.pageInfo.resultsPerPage,
+        ok: true
     }
 
     responseData.items = commentsData.items.map(comment => {
         const commentData = {}
         commentData.id = comment.id
-        commentData.videoId = comment.snippet.videoId
-        commentData.totalReplyCount = comment.snippet.totalReplyCount
-        commentData.likeCount = comment.snippet.topLevelComment.snippet.likeCount
-        commentData.content = comment.snippet.topLevelComment.snippet.textDisplay
-        commentData.authorName = comment.snippet.topLevelComment.snippet.authorDisplayName
-        commentData.authorAvatar = comment.snippet.topLevelComment.snippet.authorProfileImageUrl
-        commentData.authorChannel = comment.snippet.topLevelComment.snippet.authorChannelUrl
-        commentData.publishedAt = comment.snippet.topLevelComment.snippet.publishedAt
+        commentData.videoId = comment.snippet?.videoId
+        commentData.totalReplyCount = comment.snippet?.totalReplyCount
+        commentData.likeCount = comment.snippet?.topLevelComment?.snippet?.likeCount
+        commentData.content = comment.snippet?.topLevelComment?.snippet?.textDisplay
+        commentData.authorName = comment.snippet?.topLevelComment?.snippet?.authorDisplayName
+        commentData.authorAvatar = comment.snippet?.topLevelComment?.snippet?.authorProfileImageUrl
+        commentData.authorChannel = comment.snippet?.topLevelComment?.snippet?.authorChannelUrl
+        commentData.publishedAt = comment.snippet?.topLevelComment?.snippet?.publishedAt
 
         return commentData
     })
 
-    // response.end(JSON.stringify(commentsData || error?.response?.data, null, 4))
-    response.end(JSON.stringify(responseData || error?.response?.data, null, 4))
+    response.json(responseData)
 }
 
 const addVideoComment = (request, response) => {
     response.json({ ok: false , error: 'Not Implemented'})
 }
 
-const getCommentReplays = (request, response) => {
-    response.json({ ok: false , error: 'Not Implemented'})
+const getCommentReplays = async (request, response) => {
+    const { id } = request.params
+    
+    const [repliesData, error] = await promiseWrapper(getComments({ parentId: id }))
+
+    if (!repliesData || repliesData?.items.length <= 0) {
+        return response.status(404).json({
+            ok: false,
+            error: 'Comment Doesn\'t exist'
+        })
+    }
+
+    const responseData = {
+        items: repliesData.items[0].replies.comments.map(comment => {
+            const commentData = {}
+            commentData.id = comment.id
+            commentData.videoId = comment.snippet?.videoId
+            commentData.likeCount = comment.snippet?.likeCount
+            commentData.content = comment.snippet?.textDisplay
+            commentData.authorName = comment.snippet?.authorDisplayName
+            commentData.authorAvatar = comment.snippet?.authorProfileImageUrl
+            commentData.authorChannel = comment.snippet?.authorChannelUrl
+            commentData.publishedAt = comment.snippet?.publishedAt
+    
+            return commentData
+        }),
+        ok: true
+    }
+    
+    response.json(responseData)
 }
 
 const addCommentReplay = (request, response) => {
