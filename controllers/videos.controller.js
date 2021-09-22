@@ -118,6 +118,7 @@ const importRemoveVideos = async (request, response) => {
                     videoData.title = video.snippet.title
                     videoData.description = video.snippet.description
                     videoData.thumbnail = video.snippet.thumbnails.standard.url
+                    videoData.player = video.player.embedHtml
                     videoData.accountId = request.user.id
 
                     return videoData
@@ -145,7 +146,6 @@ const importRemoveVideos = async (request, response) => {
             error: 'Something Went Wrong',
         })
     }
-
 
     response.status(204).end()
 }
