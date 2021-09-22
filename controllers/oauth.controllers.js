@@ -99,29 +99,47 @@ const googleOauthConnect = async (request, response) => {
         getGoogleAccountInfo(data.access_token)
     )
 
-    if (!profileData || !profileData.email || !profileData.name) {
+    const [channelInfo, channelError] = await promiseWrapper(getChannelInfoOfToken(data.access_token))
+    
+    if (!profileData || !profileData.email || !profileData.name || !channelInfo || channelInfo?.items?.length <= 0) {
         return response.status(400).end('Invalid Response Received from Google')
     }
 
-    // Check if the connected email is used before
-    if (payload.id !== profileData.email) {
-        const otherAccounts = await prisma.account.findMany({
-            where: {
+    const playlistId = channelInfo.items[0].contentDetails?.relatedPlaylists?.uploads
+    const channelId = channelInfo.items[0]?.id 
+
+    // Check if the connected email is used before in another account
+    // Or the youtube channel is connected to somehow to another account
+    const otherAccounts = await prisma.account.findMany({
+        where: {
+            OR: [{
                 AND: [
-                    {
-                        email: profileData.email
-                    },
-                    {
-                        NOT: {
-                            email: account.email
+                    { youtubeChannelId: channelId },
+                    { NOT: {
+                            id: account.id
                         }
                     }
                 ]
-            }
-        })
+            },
+            {
+                AND: [
+                    { email: profileData.email },
+                    { NOT: {
+                            id: account.id
+                        }
+                    }
+                ]
+            }]
+        }
+    })
 
-        if (otherAccounts.length > 0) {
-            return response.status(400).end('Invalid Response Received from Google')
+    if (otherAccounts.length > 0) {
+        try {
+            const finishedUrl = new URL(parsedState.finished) // This throw an exception if the url is invalid
+            finishedUrl.searchParams.append('error', 'This Google account or youtube channel is already connected with another account')
+            return response.redirect(finishedUrl.href)
+        } catch {
+            return response.status(400).end('This Google account or youtube channel is already connected with another account')
         }
     }
 
@@ -130,6 +148,8 @@ const googleOauthConnect = async (request, response) => {
             email: payload.id
         },
         data: {
+            youtubeChannelId: channelId,
+            youtubePlaylistId: playlistId,
             googleTokens: {
                 refresh_token: data.refresh_token,
                 access_token: data.access_token,
