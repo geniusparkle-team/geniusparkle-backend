@@ -67,6 +67,10 @@ const getComments = async ({id, parentId}, maxResults = 20, pageToken) => {
     return response.data
 }
 
+// const addComment = async (videoId, channelId, ) => {
+
+// }
+
 module.exports = {
     getChannelInfoOfToken,
     getVideosOfPlaylist,
