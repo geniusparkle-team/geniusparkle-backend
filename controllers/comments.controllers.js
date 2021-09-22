@@ -1,5 +1,9 @@
-const { getComments } = require("../helpers/youtube-api")
+const { PrismaClient } = require('@prisma/client')
+
+const { getComments, addComment } = require("../helpers/youtube-api")
 const { promiseWrapper } = require("../utils/generic")
+
+const prisma = new PrismaClient()
 
 const getVideoComments = async (request, response) => {
     const { id:videoId } = request.params
@@ -8,8 +12,8 @@ const getVideoComments = async (request, response) => {
     const [commentsData, error] = await promiseWrapper(
         getComments({ id: videoId }, count || 20, pageToken)
     )
-
-    if (!commentsData || commentsData?.items.length <= 0) {
+    
+    if (!commentsData) {
         return response.status(404).json({
             ok: false,
             error: 'Video Doesn\'t exist'
@@ -41,8 +45,54 @@ const getVideoComments = async (request, response) => {
     response.json(responseData)
 }
 
-const addVideoComment = (request, response) => {
-    response.json({ ok: false , error: 'Not Implemented'})
+const addVideoComment = async (request, response) => {
+    const { id:videoId } = request.params
+    const { content } = request.body
+    const { access_token } = request.user?.googleTokens || {}
+
+    if (!content || content === '') {
+        if (!video) {
+            return response.status(404).json({
+                ok: false,
+                error: 'Invalid Request'
+            })
+        }
+    }
+
+    const video = await prisma.video.findUnique({
+        where : {
+            id: videoId
+        },
+        select: { account: true }
+    })
+
+    if (!video) {
+        return response.status(404).json({
+            ok: false,
+            error: 'Video doen\'t exist or not imported'
+        })
+    }
+
+    const [data, error] = await promiseWrapper(
+        addComment(videoId, video.account.youtubeChannelId, content, access_token)
+    )
+
+    if (!data) {
+        return response.status(500).json({
+            ok: false,
+            error: 'Something went wrong'
+        })
+    }
+
+    const responseData = {}
+    responseData.id = data.id
+    responseData.videoId = data.snippet.videoId
+    responseData.authorDisplayName = data.snippet.topLevelComment.snippet.authorDisplayName
+    responseData.authorProfileImageUrl = data.snippet.topLevelComment.snippet.authorProfileImageUrl
+    responseData.authorChannelUrl = data.snippet.topLevelComment.snippet.authorChannelUrl
+    responseData.textOriginal = data.snippet.topLevelComment.snippet.textOriginal
+
+    response.json(responseData)
 }
 
 const getCommentReplays = async (request, response) => {

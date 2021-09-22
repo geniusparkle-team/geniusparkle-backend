@@ -52,8 +52,10 @@ const verrifyGoogleTokens = async (request, response, next) => {
 }
 
 const googleOauthRequired = (request, response, next) => {
-    if (!request.googleOauthVerified) {
-        return res.status(401).json({ error: 'Google oauth is required' })
+    if (!request.googleOauthVerified ||
+        !request.user?.youtubeChannelId ||
+        !request.user?.youtubePlaylistId) {
+        return response.status(401).json({ error: 'Google oauth is required' })
     }
 
     next()

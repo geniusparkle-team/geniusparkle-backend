@@ -11,7 +11,7 @@ router.get('/all', googleOauthRequired, videosControllers.getAllVideos)
 router.get('/:id', videosControllers.getVideoDetails)
 
 router.get('/:id/comments', commentsControllers.getVideoComments)
-// router.post('/:id/comments')
+router.post('/:id/comments', googleOauthRequired, commentsControllers.addVideoComment)
 router.get('/comments/:id/replies', commentsControllers.getCommentReplays)
 // router.post('/comments/:id/replies')
 // router.delete('/comments/:id')

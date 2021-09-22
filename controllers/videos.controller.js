@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 
-const { getChannelInfoOfToken, getVideosOfPlaylist, getVideosData } = require('../helpers/youtube-api')
+const { getVideosOfPlaylist, getVideosData } = require('../helpers/youtube-api')
 const { promiseWrapper } = require('../utils/generic')
 
 const prisma = new PrismaClient()
@@ -18,31 +18,6 @@ const getAllVideos = async (request, response) => {
     })
 
     const videosIds = videos.map(video => video.id)
-
-    if (!playlistId) {
-        const [channelInfo, channelError] = await promiseWrapper(getChannelInfoOfToken(access_token))
-        
-        if (!channelInfo || channelInfo?.items?.length <= 0) {
-            return response.status(500).json({
-                ok: false,
-                error: 'Something went wrong!',
-            })
-        }
-        
-        const channelId = channelInfo.items[0].id 
-        playlistId = channelInfo.items[0].contentDetails?.relatedPlaylists?.uploads
-
-        await prisma.account.update({
-            where: {
-                email: request.user.email
-            },
-            data: {
-                youtubePlaylistId: playlistId,
-                youtubeChannelId: channelId
-            }
-        })
-    }
-
 
     const [playlistItems, playlistError] = await promiseWrapper(
         getVideosOfPlaylist(playlistId, access_token, count || 5, pageToken)
@@ -75,10 +50,11 @@ const getAllVideos = async (request, response) => {
         return data
     }).filter(video => video.isPublic)
     
-    response.end(JSON.stringify(responseData, null, 4))
+    response.json(responseData)
 }
 
 // Import or/and remove videos from youtube
+// TODO : Check if all the video are actually owned by this user
 const importRemoveVideos = async (request, response) => {
     const { import: toImport, remove } = request.body
 
@@ -140,7 +116,6 @@ const importRemoveVideos = async (request, response) => {
     try {
         await prisma.$transaction(actions)
     } catch (error) {
-        console.log(error)
         return response.status(500).json({
             ok: false,
             error: 'Something Went Wrong',
