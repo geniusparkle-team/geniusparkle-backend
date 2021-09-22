@@ -41,8 +41,35 @@ const getVideosData = async (ids, access_token) => {
     return response.data
 }
 
+// Get comments of a video by passing id field
+// Or replies of a comment by passing parentId
+const getComments = async ({id, parentId}, maxResults = 20, pageToken) => {
+    const commentsUrl = new URL('https://www.googleapis.com/youtube/v3/commentThreads')
+    commentsUrl.searchParams.append('key', process.env.youtube_api_key)
+    commentsUrl.searchParams.append('textFormat', 'plainText')
+    commentsUrl.searchParams.append('maxResults', maxResults || 20)
+    
+    if (id) {
+        const parts = ['id', 'snippet']
+        commentsUrl.searchParams.append('videoId', id)
+        commentsUrl.searchParams.append('part', parts.join(','))
+    } else if (parentId) {
+        commentsUrl.searchParams.append('id', parentId)
+        commentsUrl.searchParams.append('part', 'replies')
+    }
+    
+    if (pageToken) {
+        commentsUrl.searchParams.append('pageToken', pageToken)
+    }
+
+    const response = await axios.get(commentsUrl.href)
+
+    return response.data
+}
+
 module.exports = {
     getChannelInfoOfToken,
     getVideosOfPlaylist,
-    getVideosData
+    getVideosData,
+    getComments
 }
