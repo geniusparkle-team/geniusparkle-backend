@@ -86,7 +86,7 @@ const importRemoveVideos = async (request, response) => {
         (toImport && !(toImport instanceof Array)) ||
         (remove && !(remove instanceof Array))
     ) {
-        return response.json({
+        return response.status(400).json({
             ok: false,
             error: 'Invalid Request',
         })
@@ -98,7 +98,7 @@ const importRemoveVideos = async (request, response) => {
         const [videosData, error] = await promiseWrapper(getVideosData(toImport, request.token))
 
         if (!videosData || videosData?.items?.length <= 0) {
-            return response.json({
+            return response.status(400).json({
                 ok: false,
                 error: 'Invalid Request',
             })
@@ -141,7 +141,7 @@ const importRemoveVideos = async (request, response) => {
         await prisma.$transaction(actions)
     } catch (error) {
         console.log(error)
-        return response.json({
+        return response.status(500).json({
             ok: false,
             error: 'Something Went Wrong',
         })
@@ -150,7 +150,32 @@ const importRemoveVideos = async (request, response) => {
     response.status(204).end()
 }
 
+const getVideoDetails = async (request, response) => {
+    const { id } = request.params
+
+    if (!id) {
+        return response.status(400).json({
+            ok: false,
+            error: 'Video id field is required',
+        })
+    }
+
+    const video = await prisma.video.findUnique({
+        where: { id }
+    })
+
+    if (!video) {
+        return response.status(404).json({
+            ok: false,
+            error: 'Video doesn\'t exit or never been imported',
+        })
+    }
+
+    response.json(video)
+}
+
 module.exports = {
     getAllVideos,
-    importRemoveVideos
+    importRemoveVideos,
+    getVideoDetails
 }

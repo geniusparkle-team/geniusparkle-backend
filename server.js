@@ -48,8 +48,8 @@ app.use('/api/mail', mailRouter);
 
 // Videos Api Routes
 const videosRouter = require('./routes/videos.routes');
-const { verrifyGoogleTokens, googleOauthRequired } = require('./middlewares/google-oauth.middleware');
-app.use('/api/videos', authenticatedOnly, verrifyGoogleTokens, googleOauthRequired, videosRouter)
+const { verrifyGoogleTokens } = require('./middlewares/google-oauth.middleware');
+app.use('/api/videos', authenticatedOnly, verrifyGoogleTokens, videosRouter)
 
 // listen for requests
 app.listen(port, () => {
