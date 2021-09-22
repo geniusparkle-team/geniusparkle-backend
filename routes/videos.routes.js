@@ -14,7 +14,7 @@ router.get('/:id/comments', commentsControllers.getVideoComments)
 router.post('/:id/comments', googleOauthRequired, commentsControllers.addVideoComment)
 router.get('/comments/:id/replies', commentsControllers.getCommentReplays)
 router.post('/comments/:id/replies', googleOauthRequired, commentsControllers.addCommentReplay)
-// router.delete('/comments/:id')
-// router.put('/comments/:id')
+router.delete('/comments/:id', googleOauthRequired, commentsControllers.deleteComment)
+router.put('/comments/:id', googleOauthRequired, commentsControllers.editComment)
 
 module.exports = router

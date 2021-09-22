@@ -85,14 +85,14 @@ const addComment = async (videoId, channelId, content, access_token) => {
     commentUrl.searchParams.append('key', process.env.youtube_api_key)
     commentUrl.searchParams.append('access_token', access_token)
 
-    const request = await axios.post(commentUrl.href, JSON.stringify(data), {
+    const response = await axios.post(commentUrl.href, JSON.stringify(data), {
         headers: {
             'Content-Type': 'application/json',
         }
     })
 
     
-    return request.data
+    return response.data
 }
 
 const postReply = async (parentId, content, access_token) => {
@@ -108,13 +108,47 @@ const postReply = async (parentId, content, access_token) => {
     commentUrl.searchParams.append('key', process.env.youtube_api_key)
     commentUrl.searchParams.append('access_token', access_token)
 
-    const request = await axios.post(commentUrl.href, JSON.stringify(data), {
+    const response = await axios.post(commentUrl.href, JSON.stringify(data), {
         headers: {
             'Content-Type': 'application/json',
         }
     })
 
-    return request.data
+    return response.data
+}
+
+const updateYoutubeComment = async (id, content, access_token) => {
+    const commentUrl = new URL('https://youtube.googleapis.com/youtube/v3/comments')
+    const data = {
+        id,
+        snippet: {
+            textOriginal: content,
+        },
+    }
+
+    commentUrl.searchParams.append('part', 'snippet')
+    commentUrl.searchParams.append('key', process.env.youtube_api_key)
+    commentUrl.searchParams.append('access_token', access_token)
+
+    const response = await axios.put(commentUrl.href, JSON.stringify(data), {
+        headers: {
+            'Content-Type': 'application/json',
+            Authentication: `Bearer ${access_token}`
+        }
+    })
+
+    return response
+}
+
+const deleteYoutubeComment = async (id, access_token) => {
+    const commentUrl = new URL('https://www.googleapis.com/youtube/v3/comments')
+
+    commentUrl.searchParams.append('id', id)
+    commentUrl.searchParams.append('key', process.env.youtube_api_key)
+    commentUrl.searchParams.append('access_token', access_token)
+
+    const response = await axios.delete(commentUrl.href)
+    return response.data
 }
 
 module.exports = {
@@ -123,5 +157,7 @@ module.exports = {
     getVideosData,
     getComments,
     addComment,
-    postReply
+    postReply,
+    updateYoutubeComment,
+    deleteYoutubeComment
 }

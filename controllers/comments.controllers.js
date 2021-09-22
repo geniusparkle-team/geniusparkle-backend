@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 
-const { getComments, addComment, postReply } = require("../helpers/youtube-api")
+const { getComments, addComment, postReply, updateYoutubeComment, deleteYoutubeComment } = require("../helpers/youtube-api")
 const { promiseWrapper } = require("../utils/generic")
 
 const prisma = new PrismaClient()
@@ -160,12 +160,51 @@ const addCommentReplay = async (request, response) => {
     response.json(data)
 }
 
-const deleteComment = (request, response) => {
-    response.json({ ok: false , error: 'Not Implemented'})
+const deleteComment = async (request, response) => {
+    const { id } = request.params
+    const { access_token } = request.user?.googleTokens || {}
+
+    const [data, error] = await promiseWrapper(
+        deleteYoutubeComment(id, access_token)
+    )
+
+    if (error) {
+        console.log(JSON.stringify(error?.response?.data, null, 4))
+        return response.status(404).json({
+            ok: false,
+            error: 'You cannot delete this comment'
+        })
+    }
+
+    response.status(204).end()
 }
 
-const editComment = (request, response) => {
-    response.json({ ok: false , error: 'Not Implemented'})
+// TODO : this doesn't work as expected.
+const editComment = async (request, response) => {
+    const { id } = request.params
+    const { content } = request.body
+    const { access_token } = request.user?.googleTokens || {}
+
+    if (!content || content === '') {
+        return response.status(404).json({
+            ok: false,
+            error: 'Invalid Request'
+        })
+    }
+
+    const [data, error] = await promiseWrapper(
+        updateYoutubeComment(id, content, access_token)
+    )
+
+    if (!data) {
+        console.log(JSON.stringify(error?.response?.data, null, 4))
+        return response.status(404).json({
+            ok: false,
+            error: 'You cannot edit this comment'
+        })
+    }
+
+    response.status(204).end()
 }
 
 module.exports = {
