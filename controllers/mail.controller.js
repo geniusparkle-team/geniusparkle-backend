@@ -1,9 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
-const nodemailer = require('nodemailer');
-const smtpTransport = require('nodemailer-smtp-transport');
 var bcrypt = require("bcryptjs");
+
+const transporter = require('../config/mail')
 
 module.exports.emailVerify = async (req, res) => {
   try {
@@ -102,20 +102,6 @@ module.exports.emailResetPass = async (req, res) => {
     const tokenVerify = jwt.sign({ email: req.body.email }, process.env.secretOrKey, {
       expiresIn: 300,
     });
-
-    // config mail server
-    const transporter = nodemailer.createTransport(smtpTransport({
-      host: 'mail.geniusparkle.com',
-      secureConnection: false,
-      tls: {
-        rejectUnauthorized: false
-      },
-      port: 465,
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      }
-    }));
 
     var urlResetpass = "/?token=" + tokenVerify;
 

@@ -1,11 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 var bcrypt = require("bcryptjs");
-const prisma = new PrismaClient();
-const fetchP = import('node-fetch').then(mod => mod.default)
+const fetchP = import('node-fetch').then(mod => mod.default) // you can use axios it's cleaner
 const fetch = (...args) => fetchP.then(fn => fn(...args))
-const nodemailer = require('nodemailer');
-const smtpTransport = require('nodemailer-smtp-transport');
+
+const transporter = require('../config/mail')
+
+const prisma = new PrismaClient();
 
 module.exports.signup = async (req, res) => {
   try {
@@ -29,7 +30,7 @@ module.exports.signup = async (req, res) => {
     if (!(error.length === 0)) {
       return res.status(400).json({
         ok: false,
-        error: "Please input: " + error
+        error: "Please input: " + error.join(', ')
       });
     };
     const email = await prisma.account.findUnique({
@@ -57,20 +58,6 @@ module.exports.signup = async (req, res) => {
           tokenVerify: hashMail
         },
       });
-
-      // config mail server
-      const transporter = nodemailer.createTransport(smtpTransport({
-        host: 'mail.geniusparkle.com',
-        secureConnection: false,
-        tls: {
-          rejectUnauthorized: false
-        },
-        port: 465,
-        auth: {
-          user: process.env.EMAIL_USERNAME,
-          pass: process.env.EMAIL_PASSWORD,
-        }
-      }));
 
       var urlVerify = "http://localhost:8080/api/mail/verify?token=" + tokenVerify;
 
@@ -196,7 +183,7 @@ module.exports.login = async (req, res) => {
     if (!(error.length === 0)) {
       res.status(400).json({
         ok: false,
-        error: "Please input: " + error
+        error: "Please input: " + error.join(', ')
       });
     };
     const email = await prisma.account.findUnique({
