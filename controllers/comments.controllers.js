@@ -176,7 +176,7 @@ const deleteComment = async (request, response) => {
         })
     }
 
-    response.status(204).end()
+    response.json({ ok: false })
 }
 
 // TODO : this doesn't work as expected.
@@ -204,7 +204,7 @@ const editComment = async (request, response) => {
         })
     }
 
-    response.status(204).end()
+    response.json({ ok: false })
 }
 
 module.exports = {

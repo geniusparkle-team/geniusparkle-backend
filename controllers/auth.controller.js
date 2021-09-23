@@ -244,7 +244,7 @@ module.exports.resetPass = async (req, res) => {
     if (!(error.length === 0)) {
       return res.status(400).json({
         ok: false,
-        error: "Please input: " + error
+        error: "Please input: " + error.join(', ')
       });
     };
 

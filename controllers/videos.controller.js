@@ -54,7 +54,6 @@ const getAllVideos = async (request, response) => {
 }
 
 // Import or/and remove videos from youtube
-// TODO : Check if all the video are actually owned by this user
 const importRemoveVideos = async (request, response) => {
     const { import: toImport, remove } = request.body
 
@@ -81,6 +80,19 @@ const importRemoveVideos = async (request, response) => {
         }
 
         itemsToImport = videosData.items
+    }
+
+    // Check if all videos are owned by the user; use for loop because it supports break
+    for (let i =  0; i < itemsToImport.length ; i++) {
+        const videoChannelId = itemsToImport[i]?.snippet?.channelId
+        const videoId = itemsToImport[i]?.snippet?.videoId
+        
+        if (request.user.youtubeChannelId !== videoChannelId) {
+            return response.status(400).json({
+                ok: false,
+                error: `You cannot import all this videos`
+            })
+        }
     }
 
     let actions = []
@@ -122,7 +134,7 @@ const importRemoveVideos = async (request, response) => {
         })
     }
 
-    response.status(204).end()
+    response.json({ ok: false })
 }
 
 const getVideoDetails = async (request, response) => {
