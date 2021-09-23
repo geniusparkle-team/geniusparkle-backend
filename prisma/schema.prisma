@@ -26,6 +26,7 @@ model account {
   updateDate  DateTime @default(now()) @updatedAt @db.Timestamp(6)
   accRole     String   @default("user") @db.VarChar(45)
   note        String?  @db.Text
+  avatar      String?  @db.Text
 
   googleTokens      Json?   @db.Json
   youtubeChannelId  String? @unique
