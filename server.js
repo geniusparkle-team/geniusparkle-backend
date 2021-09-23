@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
     res.json({ "message": "genius-park-api" });
 });
 
-// Handle oauth callbacks
+// Handles oauth callbacks
 const oauthRouter = require('./routes/oauth.routes')
 app.use('/oauth/', oauthRouter)
 
@@ -50,6 +50,10 @@ app.use('/api/mail', mailRouter);
 const videosRouter = require('./routes/videos.routes');
 const { verrifyGoogleTokens } = require('./middlewares/google-oauth.middleware');
 app.use('/api/videos', authenticatedOnly, verrifyGoogleTokens, videosRouter)
+
+// User data routes
+const userRouter = require('./routes/user.routes')
+app.use('/api/user', authenticatedOnly, verrifyGoogleTokens, userRouter)
 
 // listen for requests
 app.listen(port, () => {
