@@ -16,6 +16,8 @@ const googleOauth = async (request, response) => {
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/youtube',
         'https://www.googleapis.com/auth/youtube.force-ssl',
+        'https://www.googleapis.com/auth/user.birthday.read',
+        'https://www.googleapis.com/auth/user.gender.read'
     ]
 
     if (!finished) {
@@ -234,6 +236,9 @@ const googleOauthCallback = async (request, response) => {
                 password: bcrypt.hashSync('<Dont have password>', 10),
                 youtubeChannelId: channelId,
                 youtubePlaylistId: playlistId,
+                avatar: profileData.picture,
+                gender: profileData.gender,
+                birthday: new Date(profileData.birthday),
 
                 googleTokens: {
                     refresh_token: data.refresh_token,

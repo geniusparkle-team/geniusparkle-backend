@@ -19,12 +19,33 @@ const getGoogleTokens = async (code, redirect_uri) => {
 }
 
 const getGoogleAccountInfo = async (token) => {
-    const infoUrl = new URL('https://www.googleapis.com/oauth2/v1/userinfo')
-    infoUrl.searchParams.append('alt', 'json')
+    const data = {}
+    const fields = ['birthdays', 'emailAddresses', 'genders', 'names', 'photos', 'urls']
+    const infoUrl = new URL('https://people.googleapis.com/v1/people/me')
+    infoUrl.searchParams.append('personFields', fields.join(','))
     infoUrl.searchParams.append('access_token', token)
 
     const response = await axios.get(infoUrl.href)
-    return response.data
+
+    data.name = response.data?.names[0]?.displayName
+    data.email = response.data?.emailAddresses[0]?.value
+    data.picture = response.data?.photos[0]?.url
+    data.gender = (response.data?.genders||[])[0]?.value || 'unknow'
+
+    const birthdays = response.data?.birthdays || []
+
+    for (let birthday of birthdays) {
+        console.log('.')
+        const bYear = birthday?.date?.year
+        const bMonth = birthday?.date?.month
+        const bDay = birthday?.date?.day
+
+        if (bYear && bMonth && bDay) {
+            data.birthday =`${bYear}-${bMonth < 10 ? '0' + bMonth : bMonth}-${bDay < 10 ? '0' + bDay : bDay}`
+        }
+    }
+
+    return data
 }
 
 const refreshGoogleAccessToken = async (refresh_token) => {

@@ -85,12 +85,11 @@ const importRemoveVideos = async (request, response) => {
     // Check if all videos are owned by the user; use for loop because it supports break
     for (let i =  0; i < itemsToImport.length ; i++) {
         const videoChannelId = itemsToImport[i]?.snippet?.channelId
-        const videoId = itemsToImport[i]?.snippet?.videoId
         
         if (request.user.youtubeChannelId !== videoChannelId) {
             return response.status(400).json({
                 ok: false,
-                error: `You cannot import all this videos`
+                error: `You cannot import all this videos. some of them are not yours.`
             })
         }
     }
