@@ -12,9 +12,11 @@ const getUserProfile = (request, response) => {
     const data = {
         id: user.id,
         name: user.name,
+        email: user.email,
         birthday: user.birthday,
-        age: user.age,
         gender: user.gender,
+        avatar: user.avatar,
+        accountType: user.type,
         youtubeChannelId: user.youtubeChannelId,
         googleOauthVerified: request.googleOauthVerified
     }
@@ -84,7 +86,62 @@ const uploadProfileImage = async (request, response) => {
     response.json({ ok : true })
 }
 
+const updateProfile = async (request, response) => {
+    const { body, user } = request
+    const allowedFields = ['name', 'birthday', 'gender', 'avatar', 'type']
+    const dataEntries = Object.entries(body)    
+    const dateRegEx = /^\d{2,4}(-|\/)\d{2}(-|\/)\d{2}$/
+    const genders = ['male', 'female', 'unknow']
+    const types = ['student', 'teacher']
+    const errors = []
+
+    if (dataEntries.length <= 0) errors.push('Empty data is not allowed')
+
+    dataEntries.forEach(entry => {
+        const [key, value] = entry
+
+        if (!allowedFields.includes(key)) {
+            errors.push(`The field ${key} is not allowed`)
+        }
+    })
+
+    if (errors.length > 0) return response.status(400).json({ errors, ok: false })
+    
+    let { name, gender, type, birthday } = body
+    
+    if (name && name.length <= 3) errors.push('The name field should be more than 3 chars')
+    if (gender && !genders.includes(gender)) errors.push('invalid gender field')
+    if (type && !types.includes(type)) errors.push('invalid type field')
+    if (birthday && !dateRegEx.test(birthday)) errors.push('Invalid type field')
+    else if (birthday) body.birthday = new Date(birthday)
+
+    // MAYBE
+    // if (type === 'teacher' && !user.youtubeChannelId) {
+    //     errors.push('Teacher account should be connected to a google account')
+    // }
+
+    if (errors.length > 0) return response.status(400).json({ errors, ok: false })
+
+    try {
+        await prisma.account.update({
+            data: body,
+            where: {
+                id: user.id
+            },
+        })
+
+        return response.json({ ok: true })
+    } catch (err) {
+        console.log('ERROR', err)
+        return response.status(500).json({
+            error: 'Something went wrong',
+            ok: false,
+        })
+    }
+}
+
 module.exports = {
     getUserProfile,
-    uploadProfileImage
+    uploadProfileImage,
+    updateProfile
 }

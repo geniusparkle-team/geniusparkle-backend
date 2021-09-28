@@ -28,7 +28,7 @@ model account {
   tokenVerify String? @db.VarChar(150)
 
   updateDate DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  createDate DateTime @default(now()) @db.Timestamp(6)
+  createDate DateTime @default(now()) @db.Timestamp(6) @updatedAt
 
   googleTokens      Json?   @db.Json
   youtubeChannelId  String? @unique
