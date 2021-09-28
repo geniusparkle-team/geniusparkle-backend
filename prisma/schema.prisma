@@ -11,22 +11,24 @@ generator client {
 }
 
 model account {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String   @unique @db.VarChar(45)
-  password    String   @db.VarChar(150)
-  birthday    String?  @db.VarChar(45)
-  age         Int?
-  gender      Gender?  @default(unknow)
-  status      String   @default("acticve") @db.VarChar(45)
-  verify      Boolean  @default(false)
-  tokenVerify String?  @db.VarChar(150)
-  otherData   String?  @db.VarChar(150)
-  createDate  DateTime @default(now()) @db.Timestamp(6)
-  updateDate  DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  accRole     String   @default("user") @db.VarChar(45)
-  note        String?  @db.Text
-  avatar      String?  @db.Text
+  id       Int         @id @default(autoincrement())
+  name     String
+  email    String      @unique @db.VarChar(45)
+  password String      @db.VarChar(150)
+  birthday DateTime    @db.Date
+  gender   Gender?     @default(unknow)
+  isActive Boolean     @default(true)
+  isAdmin  Boolean     @default(false)
+  verify   Boolean     @default(false)
+  avatar   String?     @db.Text
+  type     accountType @default(student)
+
+  otherData   String? @db.VarChar(150) // Use less field
+  note        String? @db.Text // No need for that
+  tokenVerify String? @db.VarChar(150)
+
+  updateDate DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  createDate DateTime @default(now()) @db.Timestamp(6)
 
   googleTokens      Json?   @db.Json
   youtubeChannelId  String? @unique
@@ -48,4 +50,9 @@ enum Gender {
   male
   female
   unknow
+}
+
+enum accountType {
+  student
+  teacher
 }
