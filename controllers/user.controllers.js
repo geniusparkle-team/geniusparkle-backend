@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client')
 
 const { getMimeType } = require('../helpers/files')
 const { uploadFile, deleteFile } = require('../helpers/storage')
-const { promiseWrapper } = require('../utils/generic')
+const { promiseWrapper, randomStr } = require('../utils/generic')
 
 const prisma = new PrismaClient()
 
@@ -52,7 +52,7 @@ const uploadProfileImage = async (request, response) => {
 
     // upload file to cloud storage
     const [uploadedUrl, error] = await promiseWrapper(
-        uploadFile(`filename.${ext}`, mimeType, files.avatar.path)
+        uploadFile(`${randomStr(20)}.${ext}`, mimeType, files.avatar.path)
     )
 
     if (!uploadedUrl) {

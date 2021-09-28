@@ -1,3 +1,5 @@
+let asciiChars = null
+
 const base64ToStr = (data) => {
     return Buffer.from(data, 'base64').toString()
 }
@@ -26,9 +28,37 @@ const isExpired = (dateStr) => {
     return Date.now() >= expirationDate.getTime()
 } 
 
+const getAsciiChars = () => {
+    if(asciiChars && asciiChars.length >= 26 * 2 + 10) return asciiChars
+
+    const chars = []
+
+    for(let i = 0; i < 26 ; i++) {
+        chars.push(String.fromCharCode(i + 97))
+        chars.push(String.fromCharCode(i + 65))
+    }
+
+    for(let i = 0; i < 10; i++) {
+        chars.push(i.toString())
+    }
+
+    asciiChars = [...chars]
+    return chars
+}
+
+const randomStr = (len = 25) => {
+    const allowedChars = getAsciiChars()
+
+    return new Array(len).fill(0).map(() => {
+        const index = Math.round(Math.random() * allowedChars.length)
+        return allowedChars[index]
+    }).join('')
+}
+
 module.exports = {
     base64ToStr,
     promiseWrapper,
     strToBase64,
-    isExpired
+    isExpired,
+    randomStr
 }
