@@ -8,7 +8,7 @@ const googleDriveTokens = {
     refresh_token: process.env.google_drive_refresh_token
 }
 
-// Bug : Creates file but it doesnt upload its content
+// Bug To Fix Later : Creates file but it doesnt upload its content
 const uploadFile = async (filename, mimeType, filePath) => {
     const { refresh_token, access_token, expires } = googleDriveTokens
     
@@ -22,12 +22,13 @@ const uploadFile = async (filename, mimeType, filePath) => {
         } else if (!tokens) {
             throw new Error('Could\'t refresh tokens')
         }
-
+        
         googleDriveTokens.access_token = tokens.access_token
         googleDriveTokens.expires = Date.now() + tokens.expires_in
     }
-
-    const createFileUrl = new URL('https://www.googleapis.com/drive/v3/files')
+    
+    const readStream = fs.createReadStream(filePath)
+    const createFileUrl = new URL('https://www.googleapis.com/upload/drive/v3/files?uploadType=media')
     createFileUrl.searchParams.append('access_token', googleDriveTokens.access_token)
     const metaData = {
         mimeType: mimeType,
@@ -35,23 +36,22 @@ const uploadFile = async (filename, mimeType, filePath) => {
         description: 'Stuff about the file',
     }
     
-    const fileResourse = await axios.post(createFileUrl.href, JSON.stringify(metaData), {
+    const fileResourse = await axios.post(createFileUrl.href, readStream, {
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': mimeType
         }
     })
     
-    console.log(JSON.stringify(fileResourse.data, null, 4))
-    const { id } = fileResourse
-    // const uploadeFileUrl = new URL(`https://www.googleapis.com/upload/drive/v3/files/${id}`)
+    // console.log(JSON.stringify(fileResourse.data, null, 4))
+    // const { id } = fileResourse
+    // const uploadeFileUrl = new URL(`https://www.googleapis.com/drive/v3/files/${id}`)
     // uploadeFileUrl.searchParams.append('uploadType', 'media')
     // uploadeFileUrl.searchParams.append('access_token', googleDriveTokens.access_token)
 
-    // const readStream = fs.createReadStream(filePath)
     
-    // const response = await axios.put(uploadeFileUrl.href, readStream, {
+    // const response = await axios.patch(uploadeFileUrl.href, JSON.stringify(metaData), {
     //     headers: {
-    //         'Content-Type': mimeType,
+    //         'Content-Type': 'application/json'
     //     }
     // })
 
