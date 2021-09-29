@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 var bcrypt = require("bcryptjs");
 const fetchP = import('node-fetch').then(mod => mod.default) // you can use axios it's cleaner
 const fetch = (...args) => fetchP.then(fn => fn(...args))
+const nodemailer = require('nodemailer');
+const smtpTransport = require('nodemailer-smtp-transport');
 
 const transporter = require('../config/mail')
 
@@ -45,8 +47,11 @@ module.exports.signup = async (req, res) => {
       });
     } else {
       var salt = bcrypt.genSaltSync(10);
-      var hash = bcrypt.hashSync(req.body.password, salt);
-
+      var hashPass = bcrypt.hashSync(req.body.password, salt);
+      var hashMail = bcrypt.hashSync(req.body.email, salt);
+      const tokenVerify = jwt.sign({ email: req.body.email }, process.env.secretOrKey, {
+        expiresIn: 7200,
+      });
       const account = await prisma.account.create({
         data: {
           name: req.body.name,
@@ -79,8 +84,8 @@ module.exports.signup = async (req, res) => {
         subject: 'Account verification',
         text: '',
         html: content
-      }
-      await transporter.sendMail(mailOptions);
+      };
+      const sendMail = await transporter.sendMail(mainOptions);
 
       return res.json({ ok: true, message: "Signup successfully!" });
     }
