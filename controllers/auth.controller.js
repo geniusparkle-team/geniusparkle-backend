@@ -8,10 +8,6 @@ const transporter = require('../config/mail')
 
 const prisma = new PrismaClient();
 
-const transporter = require('../config/mail')
-
-const prisma = new PrismaClient();
-
 // Note : No need to disconnect from db it is done inclusively
 
 module.exports.signup = async (req, res) => {
