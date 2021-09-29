@@ -7,5 +7,4 @@ router.get('/verify', emailVerify);
 
 router.post('/resetPass', emailResetPass);
 
-
 module.exports = router;

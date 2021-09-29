@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 var bcrypt = require("bcryptjs");
 const fetchP = import('node-fetch').then(mod => mod.default) // you can use axios it's cleaner
 const fetch = (...args) => fetchP.then(fn => fn(...args))
+const nodemailer = require('nodemailer');
+const smtpTransport = require('nodemailer-smtp-transport');
 
 const transporter = require('../config/mail')
 
