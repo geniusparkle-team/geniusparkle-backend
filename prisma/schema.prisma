@@ -15,7 +15,7 @@ model account {
   name     String
   email    String      @unique @db.VarChar(45)
   password String      @db.VarChar(150)
-  birthday DateTime?    @db.Date
+  birthday DateTime    @db.Date
   gender   Gender?     @default(unknow)
   isActive Boolean     @default(true)
   isAdmin  Boolean     @default(false)
