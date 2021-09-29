@@ -3,18 +3,12 @@ const jwt = require('jsonwebtoken');
 var bcrypt = require("bcryptjs");
 const fetchP = import('node-fetch').then(mod => mod.default) // you can use axios it's cleaner
 const fetch = (...args) => fetchP.then(fn => fn(...args))
-<<<<<<< HEAD
 
 const transporter = require('../config/mail')
 
 const prisma = new PrismaClient();
 
 // Note : No need to disconnect from db it is done inclusively
-=======
-const nodemailer = require('nodemailer');
-const smtpTransport = require('nodemailer-smtp-transport');
-const { catchAsync } = require('../utils.js');
->>>>>>> 38d4027 (Fix merge conflict)
 
 module.exports.signup = async (req, res) => {
   try {
