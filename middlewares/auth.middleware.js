@@ -36,9 +36,17 @@ module.exports.authentication = async (req, res, next) => {
 }
 
 module.exports.authenticatedOnly = async (req, res, next) => {
+<<<<<<< HEAD
     if (!req.user) {
+=======
+    if (!request.user) {
+>>>>>>> 536ff79 (Separating authentication from authorization)
         return res.status(401).json({ error: 'UnAuthorized' })
     }
 
     next()
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 536ff79 (Separating authentication from authorization)
