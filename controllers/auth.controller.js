@@ -85,7 +85,7 @@ module.exports.signup = async (req, res) => {
         text: '',
         html: content
       };
-      const sendMail = await transporter.sendMail(mainOptions);
+      const sendMail = await transporter.sendMail(mailOptions);
 
       return res.json({ ok: true, message: "Signup successfully!" });
     }
