@@ -191,7 +191,7 @@ const googleOauthCallback = async (request, response) => {
     const [data, error] = await promiseWrapper(getGoogleTokens(code, redirectUrl.href))
 
     if (!data || !data.access_token || !data.refresh_token) {
-        return response.status(400).end('Invalid Response Received from Google 2')
+        return response.status(400).end(JSON.stringify({data,error}, null, 4))
     }
 
     const [profileData, profileDataError] = await promiseWrapper(
