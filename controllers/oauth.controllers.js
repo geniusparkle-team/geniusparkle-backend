@@ -252,6 +252,23 @@ const googleOauthCallback = async (request, response) => {
             },
         })
     }
+
+    const newGoogleTokens = {
+        refresh_token: data.refresh_token || account.googleTokens.refresh_token,
+        access_token: data.access_token,
+        access_token_expires: new Date(
+            Date.now() + data.expires_in * 1000
+        ),
+    }
+
+    prisma.account.update({
+        where: {
+            id: account.id,
+        },
+        data : {
+            googleTokens: newGoogleTokens,
+        }
+    })
     
     const token = jwt.sign({ id: profileData.email }, process.env.secretOrKey, {
         expiresIn: 86400,
