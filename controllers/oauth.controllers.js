@@ -177,7 +177,7 @@ const googleOauthCallback = async (request, response) => {
     }
 
     if (!code || code == '') {
-        return response.status(400).end('Invalid Response Received from Google')
+        return response.status(400).end('Invalid Response Received from Google 1')
     }
 
     if (parsedState && parsedState.finished) {
@@ -191,7 +191,7 @@ const googleOauthCallback = async (request, response) => {
     const [data, error] = await promiseWrapper(getGoogleTokens(code, redirectUrl.href))
 
     if (!data || !data.access_token || !data.refresh_token) {
-        return response.status(400).end('Invalid Response Received from Google')
+        return response.status(400).end('Invalid Response Received from Google 2')
     }
 
     const [profileData, profileDataError] = await promiseWrapper(
@@ -199,7 +199,7 @@ const googleOauthCallback = async (request, response) => {
     )
 
     if (!profileData || !profileData.email || !profileData.name) {
-        return response.status(400).end('Invalid Response Received from Google')
+        return response.status(400).end('Invalid Response Received from Google 3')
     }
 
     let account = await prisma.account.findUnique({
