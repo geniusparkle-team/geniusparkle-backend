@@ -26,7 +26,7 @@ const getAllVideos = async (request, response) => {
     if (!playlistItems) {
         return response.status(500).end(JSON.stringify({
             ok: false,
-            playlistError,
+            error: playlistError?.response?.data,
             playlistItems,
         }, null, 4))
     }
