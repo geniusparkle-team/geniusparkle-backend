@@ -177,7 +177,7 @@ const googleOauthCallback = async (request, response) => {
     }
 
     if (!code || code == '') {
-        return response.status(400).end('Invalid Response Received from Google 1')
+        return response.status(400).end('Invalid Response Received from Google')
     }
 
     if (parsedState && parsedState.finished) {
@@ -190,8 +190,8 @@ const googleOauthCallback = async (request, response) => {
 
     const [data, error] = await promiseWrapper(getGoogleTokens(code, redirectUrl.href))
 
-    if (!data || !data.access_token || !data.refresh_token) {
-        return response.status(400).end(JSON.stringify({data,error}, null, 4))
+    if (!data || !data.access_token) {
+        return response.status(400).end('Invalid Response Received from Google')
     }
 
     const [profileData, profileDataError] = await promiseWrapper(
@@ -199,7 +199,7 @@ const googleOauthCallback = async (request, response) => {
     )
 
     if (!profileData || !profileData.email || !profileData.name) {
-        return response.status(400).end('Invalid Response Received from Google 3')
+        return response.status(400).end('Invalid Response Received from Google')
     }
 
     let account = await prisma.account.findUnique({
@@ -209,7 +209,9 @@ const googleOauthCallback = async (request, response) => {
     })
 
     // Sign-up but before signing-up we check if channel is already used
-    if (!account) {
+    if (!account && !data.refresh_token) {
+        return response.status(400).end('Invalid Response Received from Google')
+    } else if (!account) {
         const [channelInfo, channelError] = await promiseWrapper(getChannelInfoOfToken(data.access_token))
         const channelId = channelInfo.items[0]?.id 
         const playlistId = channelInfo.items[0].contentDetails?.relatedPlaylists?.uploads
