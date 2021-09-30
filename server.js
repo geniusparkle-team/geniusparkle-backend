@@ -9,6 +9,9 @@ const app = express();
 // Setup server port
 const port = process.env.PORT;
 
+// Trust proxy to know if http or https is being used
+app.enable('trust proxy')
+
 // CORS
 app.use(cors());
 
