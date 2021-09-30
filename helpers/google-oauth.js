@@ -8,6 +8,7 @@ const getGoogleTokens = async (code, redirect_uri) => {
     data.append('code', code)
     data.append('grant_type', 'authorization_code')
     data.append('redirect_uri', redirect_uri)
+    data.append('access_type', 'offline')
 
     const response = await axios.post(tokensUrl, data, {
         headers: {
@@ -35,7 +36,6 @@ const getGoogleAccountInfo = async (token) => {
     const birthdays = response.data?.birthdays || []
 
     for (let birthday of birthdays) {
-        console.log('.')
         const bYear = birthday?.date?.year
         const bMonth = birthday?.date?.month
         const bDay = birthday?.date?.day
