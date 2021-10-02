@@ -23,7 +23,7 @@ const verrifyGoogleTokens = async (request, response, next) => {
                     email: request.user.email
                 },
                 data: {
-                    googleTokens: null
+                    googleTokens: {}
                 }
             })
 

@@ -37,6 +37,7 @@ const googleOauth = async (request, response) => {
     oauthUrl.searchParams.append('response_type', 'code')
     oauthUrl.searchParams.append('scope', scope.join(' '))
     oauthUrl.searchParams.append('access_type', 'offline')
+    oauthUrl.searchParams.append('prompt', 'consent')
     
     if (action === 'connect') {
         state.token = request.token
@@ -261,7 +262,7 @@ const googleOauthCallback = async (request, response) => {
         ),
     }
 
-    prisma.account.update({
+    await prisma.account.update({
         where: {
             id: account.id,
         },
