@@ -134,7 +134,7 @@ const importRemoveVideos = async (request, response) => {
         })
     }
 
-    response.json({ ok: false })
+    response.json({ ok: true })
 }
 
 const getVideoDetails = async (request, response) => {
