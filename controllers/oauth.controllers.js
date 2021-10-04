@@ -217,8 +217,6 @@ const googleOauthCallback = async (request, response) => {
         const channelId = channelInfo?.items?.length > 0 ? channelInfo.items[0]?.id : null
         const playlistId = channelInfo?.items?.length > 0 ? channelInfo?.items[0].contentDetails?.relatedPlaylists?.uploads : null
 
-        console.log(JSON.stringify({ channelId, channelError}, null, 4))
-
         if (channelId) {
             account = await prisma.account.findUnique({
                 where: {
