@@ -214,14 +214,18 @@ const googleOauthCallback = async (request, response) => {
         return response.status(400).end('Invalid Response Received from Google')
     } else if (!account) {
         const [channelInfo, channelError] = await promiseWrapper(getChannelInfoOfToken(data.access_token))
-        const channelId = channelInfo.items[0]?.id 
-        const playlistId = channelInfo.items[0].contentDetails?.relatedPlaylists?.uploads
+        const channelId = channelInfo?.items?.length > 0 ? channelInfo.items[0]?.id : null
+        const playlistId = channelInfo?.items?.length > 0 ? channelInfo?.items[0].contentDetails?.relatedPlaylists?.uploads : null
 
-        account = await prisma.account.findUnique({
-            where: {
-                youtubeChannelId: channelId
-            }
-        })
+        console.log(JSON.stringify({ channelId, channelError}, null, 4))
+
+        if (channelId) {
+            account = await prisma.account.findUnique({
+                where: {
+                    youtubeChannelId: channelId,
+                },
+            })
+        }
 
         // If There is already an accoumt with same channel id then redirect to front-end with error message
         if (account && finishedUrl) {
