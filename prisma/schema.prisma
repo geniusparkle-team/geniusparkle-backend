@@ -40,6 +40,9 @@ model account {
 
   connections         account[] @relation("connections")
   connectionsRelation account[] @relation("connections")
+
+  connectionsRequest     connectionRequest[] @relation("from")
+  sentConnectionsRequest connectionRequest[] @relation("to")
 }
 
 model Video {
@@ -59,6 +62,14 @@ model Follows {
   followingId Int
 
   @@id([followerId, followingId])
+}
+
+model connectionRequest {
+  id     String  @id @default(uuid())
+  fromId Int
+  toId   Int
+  from   account @relation("from", fields: [fromId], references: [id])
+  to     account @relation("to", fields: [toId], references: [id])
 }
 
 enum Gender {
