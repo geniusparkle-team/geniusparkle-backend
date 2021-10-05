@@ -70,6 +70,8 @@ model connectionRequest {
   toId   Int
   from   account @relation("from", fields: [fromId], references: [id])
   to     account @relation("to", fields: [toId], references: [id])
+
+  @@unique([fromId, toId])
 }
 
 enum Gender {
