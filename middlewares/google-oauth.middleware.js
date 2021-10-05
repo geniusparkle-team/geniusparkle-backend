@@ -84,7 +84,7 @@ const getUserChannelInfo = async (request, response, next) => {
 
 const googleOauthRequired = (request, response, next) => {
     if (!request.googleOauthVerified) {
-        return response.status(401).json({ error: 'Google oauth is required or you don\'t have a youtube account' })
+        return response.status(401).json({ error: 'Google oauth is required' })
     }
 
     next()

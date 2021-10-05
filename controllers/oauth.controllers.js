@@ -108,23 +108,38 @@ const googleOauthConnect = async (request, response) => {
         return response.status(400).end('Invalid Response Received from Google')
     }
 
-    const playlistId = channelInfo.items[0].contentDetails?.relatedPlaylists?.uploads
-    const channelId = channelInfo.items[0]?.id 
+    let otherAccounts = []
+    const channelId = channelInfo?.items?.length > 0 ? channelInfo.items[0]?.id : null
+    const playlistId = channelInfo?.items?.length > 0 ? channelInfo?.items[0].contentDetails?.relatedPlaylists?.uploads : null
 
     // Check if the connected email is used before in another account
     // Or the youtube channel is connected to somehow to another account
-    const otherAccounts = await prisma.account.findMany({
-        where: {
-            OR: [{
-                AND: [
-                    { youtubeChannelId: channelId },
-                    { NOT: {
-                            id: account.id
+    if (channelId) {
+        otherAccounts = await prisma.account.findMany({
+            where: {
+                OR: [{
+                    AND: [
+                        { youtubeChannelId: channelId },
+                        { NOT: {
+                                id: account.id
+                            }
                         }
-                    }
-                ]
-            },
-            {
+                    ]
+                },
+                {
+                    AND: [
+                        { email: profileData.email },
+                        { NOT: {
+                                id: account.id
+                            }
+                        }
+                    ]
+                }]
+            }
+        })
+    } else {
+        otherAccounts = await prisma.account.findMany({
+            where: {
                 AND: [
                     { email: profileData.email },
                     { NOT: {
@@ -132,9 +147,9 @@ const googleOauthConnect = async (request, response) => {
                         }
                     }
                 ]
-            }]
-        }
-    })
+            }
+        })
+    }
 
     if (otherAccounts.length > 0) {
         try {
