@@ -45,8 +45,10 @@ module.exports.emailVerify = async (req, res) => {
             tokenVerify: null
           }
         });
-        return res.json({ ok: true, message: "Verify successfully!" });
-        //redirect login page
+
+        // Login automaticaly if verified
+        const accessToken = jwt.sign({ id : updateAccount.email }, process.env.secretOrKey)
+        return res.json({ ok: true, message: "Verify successfully!", accessToken });
       } else {
         return res.status(400).json({ ok: false, message: "Verify failed!" });
         //redirect error page
