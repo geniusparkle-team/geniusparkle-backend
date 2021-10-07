@@ -13,7 +13,9 @@ const port = process.env.PORT;
 app.enable('trust proxy')
 
 // CORS
-app.use(cors());
+app.use(cors({
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }))
