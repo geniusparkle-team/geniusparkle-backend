@@ -1,5 +1,10 @@
+const jwt = require('jsonwebtoken')
+const { PrismaClient } = require('@prisma/client')
+
 const { getDiscordTokens, getDiscordUserInfo } = require('../helpers/discord-oauth')
-const { strToBase64, promiseWrapper } = require('../utils/generic')
+const { base64ToStr, promiseWrapper } = require('../utils/generic')
+
+const prisma = new PrismaClient()
 
 const discordOauth = (request, response) => {
     const { finished, action } = request.query
@@ -44,7 +49,7 @@ const discordOauthCallback = async (request, response) => {
 
     try {
         parsedState = JSON.parse(base64ToStr(state))
-    } catch {
+    } catch (err) {
         // Do Something if couldn't parse data
     }
 
@@ -71,10 +76,54 @@ const discordOauthCallback = async (request, response) => {
         return response.status(400).end('Invalid Response Received from Discord')
     }
 
-    response.end(JSON.stringify({
-        userInfo,
-        error: userInfoError?.response?.data
-    }, null, 4))
+    let account = await prisma.account.findUnique({
+        where: {
+            email: userInfo.email
+        }
+    })
+
+    if (!account && !tokens.refresh_token) {
+        return response.status(400).end('Invalid Response Received from Discord')
+    } else if (!account) {
+        account = await prisma.account.create({
+            data: {
+                name: userInfo.username,
+                email: userInfo.email,
+                avatar: userInfo.avatar,
+                verify: true, // Must Re-verify account if not verified from discord
+                password: '<Password goes here>', // password must be auto-generated on oauth and sent on email
+                birthday: new Date(0),
+            }
+        })
+    }
+
+    const newDiscordTokens = {
+        refresh_token: tokens.refresh_token || account.googleTokens.refresh_token,
+        access_token: tokens.access_token,
+        access_token_expires: new Date(
+            Date.now() + tokens.expires_in * 1000
+        )
+    }
+
+    await prisma.account.update({
+        where: {
+            email: account.email
+        },
+        data: {
+            discordTokens: newDiscordTokens
+        }
+    })
+
+    const token = jwt.sign({ id: account.email }, process.env.secretOrKey, {
+        expiresIn: 86400,
+    })
+
+    if (finishedUrl) {
+        finishedUrl.searchParams.set('token', token)
+        return response.redirect(finishedUrl.href)
+    }
+    
+    response.end('Login has been done from Discord')
 }
 
 module.exports = {
