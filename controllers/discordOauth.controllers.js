@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken')
 const { PrismaClient } = require('@prisma/client')
 
 const { getDiscordTokens, getDiscordUserInfo } = require('../helpers/discord-oauth')
-const { base64ToStr, promiseWrapper } = require('../utils/generic')
+const { strToBase64, base64ToStr, promiseWrapper } = require('../utils/generic')
 
 const prisma = new PrismaClient()
 
@@ -98,7 +98,8 @@ const discordOauthCallback = async (request, response) => {
     }
 
     const newDiscordTokens = {
-        refresh_token: tokens.refresh_token || account.googleTokens.refresh_token,
+        discordId: userInfo.id,
+        refresh_token: tokens.refresh_token || account.discordTokens.refresh_token,
         access_token: tokens.access_token,
         access_token_expires: new Date(
             Date.now() + tokens.expires_in * 1000
@@ -126,7 +127,106 @@ const discordOauthCallback = async (request, response) => {
     response.end('Login has been done from Discord')
 }
 
+const discordOauthConnect = async (request, response) => {
+    const { state, code } = request.query
+    let parsedState, token, payload
+
+    try {
+        parsedState = JSON.parse(base64ToStr(state))
+    } catch {}
+
+    if (!code || !parsedState || !parsedState.token || !parsedState.finished) {
+        return response.status(400).end('Invalid Response Received from Discord')
+    }
+
+    token = parsedState?.token
+
+    try {
+        payload = jwt.verify(token, process.env.secretOrKey)
+    } catch {
+        return response.status(400).end('Invalid Response Received from Discord')
+    }
+
+    if (!payload.id) {
+        return response.status(400).end('Invalid Response Received from Google')
+    }
+
+    // Get account based on token
+    const account = await prisma.account.findUnique({
+        where: {
+            email: payload.id
+        }
+    })
+
+    if (!account) {
+        return response.status(400).end('Invalid Response Received from Discord')
+    }
+
+    // Redirect uri is required for each discord oauth request
+    const redirectUrl = new URL(`${request.protocol}://${request.get('host')}/`)
+    redirectUrl.pathname = '/oauth/discord/connect-callback'
+
+    const [tokens, error] = await promiseWrapper(getDiscordTokens(code, redirectUrl.href))
+
+    if (!tokens || !tokens.access_token || !tokens.refresh_token) {
+        return response.status(400).end('Invalid Response Received from Discord')
+    }
+
+    const [userInfo, userInfoError] = await promiseWrapper(getDiscordUserInfo(tokens.access_token))
+    
+    if (!userInfo || !userInfo.username || !userInfo.email) {
+        return response.status(400).end('Invalid Response Received from Discord')
+    }
+
+    const otherAccounts = await prisma.account.findMany({
+        where: {
+            AND: [
+                {
+                    discordTokens: {
+                        path: ['discordId'],
+                        equals: userInfo.id,
+                    },
+                },
+                {
+                    NOT: {
+                        email: account.email,
+                    },
+                },
+            ],
+        },
+    })
+
+    if (otherAccounts.length > 0) {
+        try {
+            const finishedUrl = new URL(parsedState.finished) // This throw an exception if the url is invalid
+            finishedUrl.searchParams.append('error', 'This Discord account is already connected with another account')
+            return response.redirect(finishedUrl.href)
+        } catch {
+            return response.status(400).end('This Discord account already connected with another account')
+        }
+    }
+
+    await prisma.account.update({
+        where: {
+            email: account.email,
+        },
+        data: {
+            discordTokens: {
+                discordId: userInfo.id,
+                refresh_token: tokens.refresh_token || account.discordTokens.refresh_token,
+                access_token: tokens.access_token,
+                access_token_expires: new Date(
+                    Date.now() + tokens.expires_in * 1000
+                ),
+            },
+        },
+    })
+
+    response.redirect(parsedState.finished)
+}
+
 module.exports = {
     discordOauth,
-    discordOauthCallback
+    discordOauthCallback,
+    discordOauthConnect
 }

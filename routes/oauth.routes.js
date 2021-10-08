@@ -10,6 +10,7 @@ router.get('/google/connect-callback', googleOauthControllers.googleOauthConnect
 router.get('/google/callback', googleOauthControllers.googleOauthCallback)
 
 router.get('/discord', discordOauthControllers.discordOauth)
+router.get('/discord/connect-callback', discordOauthControllers.discordOauthConnect)
 router.get('/discord/callback', discordOauthControllers.discordOauthCallback)
 
 module.exports = router
