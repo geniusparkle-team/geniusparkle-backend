@@ -8,8 +8,6 @@ router.post('/login', login);
 
 router.post('/signup', signup);
 
-router.post('/loginDiscord', loginDiscord);
-
 router.post('/resetPass', authenticatedOnly, resetPass);
 
 module.exports = router;

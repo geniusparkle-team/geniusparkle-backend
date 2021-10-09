@@ -55,10 +55,13 @@ const randomStr = (len = 25) => {
     }).join('')
 }
 
+const isTruthy = (a) => a !== null && a !== undefined && a !== ''
+
 module.exports = {
     base64ToStr,
     promiseWrapper,
     strToBase64,
     isExpired,
-    randomStr
+    randomStr,
+    isTruthy
 }

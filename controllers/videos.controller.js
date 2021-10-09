@@ -38,6 +38,7 @@ const getAllVideos = async (request, response) => {
         ok: true
     }
 
+    return response.json(playlistItems.items)
     responseData.items = playlistItems.items.map(video => {
         const data = {}
         data.videoId = video.contentDetails.videoId
@@ -50,6 +51,7 @@ const getAllVideos = async (request, response) => {
 
         return data
     }).filter(video => video.isPublic)
+
     
     response.json(responseData)
 }
