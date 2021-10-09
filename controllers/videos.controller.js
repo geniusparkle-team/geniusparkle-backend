@@ -38,15 +38,16 @@ const getAllVideos = async (request, response) => {
         ok: true
     }
 
-    return response.json(playlistItems.items)
     responseData.items = playlistItems.items.map(video => {
+        const thumbnails = video.snippet.thumbnails
+        const thumbnail = thumbnails?.standard || thumbnails?.medium || thumbnails?.high || thumbnails?.default
         const data = {}
         data.videoId = video.contentDetails.videoId
         data.videoPublishedAt = video.contentDetails.videoPublishedAt
         data.isPublic = video.status.privacyStatus === 'public'
         data.title = video.snippet.title
         data.description = video.snippet.description
-        data.thumbnail = video.snippet.thumbnails.standard.url
+        data.thumbnail = thumbnail?.url
         data.imported = videosIds.includes(data.videoId)
 
         return data
