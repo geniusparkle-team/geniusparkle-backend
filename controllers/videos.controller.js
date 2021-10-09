@@ -49,6 +49,7 @@ const getAllVideos = async (request, response) => {
         data.description = video.snippet.description
         data.thumbnail = thumbnail?.url
         data.imported = videosIds.includes(data.videoId)
+        data.channelTitle = video.snippet.channelTitle
 
         return data
     }).filter(video => video.isPublic)
