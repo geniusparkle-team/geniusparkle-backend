@@ -15,7 +15,7 @@ app.enable('trust proxy')
 // CORS
 const corsMiddleware = cors({
     origin: '*',
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Authentication']
 })
 
 app.use(corsMiddleware);
