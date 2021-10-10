@@ -55,13 +55,13 @@ const uploadProfileImage = async (request, response) => {
 
     // upload file to cloud storage
     const [uploadedUrl, error] = await promiseWrapper(
-        uploadFile(`${randomStr(20)}.${ext}`, mimeType, files.avatar.path)
+        uploadFile(`/avatars/${randomStr(20)}.${ext}`, mimeType, files.avatar.path)
     )
 
     if (!uploadedUrl) {
         const err = error?.response?.data || error
         console.log('ERROR =>', JSON.stringify(err, null, 4))
-        return response.status(400).json({
+        return response.status(500).json({
             ok: false,
             error: 'Something Went wrong'
         })

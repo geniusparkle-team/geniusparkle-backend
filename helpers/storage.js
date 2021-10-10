@@ -1,69 +1,52 @@
 const fs = require('fs')
 const { default: axios } = require("axios")
 
-const { refreshGoogleAccessToken } = require('./google-oauth')
-const { isExpired, promiseWrapper } = require('../utils/generic')
-
-const googleDriveTokens = {
-    refresh_token: process.env.google_drive_refresh_token
-}
-
-// Bug To Fix Later : Creates file but it doesnt upload its content
 const uploadFile = async (filename, mimeType, filePath) => {
-    const { refresh_token, access_token, expires } = googleDriveTokens
-    
-    if (!access_token || (expires && isExpired(expires))) {
-        const [tokens, tokensErrors] = await promiseWrapper(
-            refreshGoogleAccessToken(refresh_token)
-        )
+    const fileStream = fs.createReadStream(filePath)
 
-        if (!tokens && tokensErrors) {
-            throw tokensErrors
-        } else if (!tokens) {
-            throw new Error('Could\'t refresh tokens')
+    const data = {
+        "path": filename,
+        "mode": "add",
+        "autorename": true,
+        "mute": false,
+        "strict_conflict": false
+    }
+
+    const uploadResponse = await axios.post('https://content.dropboxapi.com/2/files/upload', fileStream,
+        {
+            headers: {
+                Authorization: `Bearer ${process.env.dropbox_access_token}`,
+                'Dropbox-API-Arg': JSON.stringify(data),
+                'Content-Type': 'application/octet-stream',
+            },
         }
-        
-        googleDriveTokens.access_token = tokens.access_token
-        googleDriveTokens.expires = Date.now() + tokens.expires_in
-    }
-    
-    const readStream = fs.createReadStream(filePath)
-    const createFileUrl = new URL('https://www.googleapis.com/upload/drive/v3/files?uploadType=media')
-    createFileUrl.searchParams.append('access_token', googleDriveTokens.access_token)
-    const metaData = {
-        mimeType: mimeType,
-        name: filename,
-        description: 'Stuff about the file',
-    }
-    
-    const fileResourse = await axios.post(createFileUrl.href, readStream, {
+    )
+
+    const { path_lower } = uploadResponse.data
+    const getMetadataPayload = JSON.stringify({
+        path: path_lower,
+        settings: {
+            audience: 'public',
+            access: 'viewer',
+            requested_visibility: 'public',
+            allow_download: true,
+        },
+    })
+
+    const metaDataResponse = await axios.post('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', getMetadataPayload , {
         headers: {
-            'Content-Type': mimeType
+            Authorization: `Bearer ${process.env.dropbox_access_token}`,
+            'Content-Type': 'application/json'
         }
     })
-    
-    // console.log(JSON.stringify(fileResourse.data, null, 4))
-    // const { id } = fileResourse
-    // const uploadeFileUrl = new URL(`https://www.googleapis.com/drive/v3/files/${id}`)
-    // uploadeFileUrl.searchParams.append('uploadType', 'media')
-    // uploadeFileUrl.searchParams.append('access_token', googleDriveTokens.access_token)
 
-    
-    // const response = await axios.patch(uploadeFileUrl.href, JSON.stringify(metaData), {
-    //     headers: {
-    //         'Content-Type': 'application/json'
-    //     }
-    // })
+    const link = new URL(metaDataResponse.data.url)
+    link.searchParams.set('raw', 1)
 
-    // console.log('Upload id =>', id)
-    // // console.log(fileResourse.request)
-    // console.log(JSON.stringify(response.data, null, 4))
-
-    return null
+    return link.href
 }
 
-const deleteFile = async (filePath, filename) => {
-
+const deleteFile = async (link) => {
 }
 
 module.exports = {
