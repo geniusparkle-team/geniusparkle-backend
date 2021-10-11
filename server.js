@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 
 // Setup server port
-const port = process.env.PORT;
+const port = process.env.PORT || 8080;
 
 // Trust proxy to know if http or https is being used
 app.enable('trust proxy')
