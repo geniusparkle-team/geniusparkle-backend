@@ -165,9 +165,6 @@ module.exports.resetPass = async (req, res) => {
   try {
     var error = [];
 
-    if (!req.body.email) {
-      error.push("email");
-    };
     if (!req.body.password) {
       error.push("password");
     };
@@ -178,18 +175,12 @@ module.exports.resetPass = async (req, res) => {
       });
     };
 
-    if (!(req.user.email === req.body.email)) {
-      return res.status(403).json({
-        ok: false,
-        error: "Access denied"
-      });
-    };
-    const email = await prisma.account.findUnique({
+    const account = await prisma.account.findUnique({
       where: {
-        email: req.body.email
+        email: req.user.email
       }
     });
-    if (email) {
+    if (account) {
       var salt = bcrypt.genSaltSync(10);
       var hashPass = bcrypt.hashSync(req.body.password, salt);
       const updateAccount = await prisma.account.update({
