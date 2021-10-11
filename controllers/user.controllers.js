@@ -19,7 +19,7 @@ const getUserProfile = (request, response) => {
         accountType: user.type,
         youtubeChannelId: user.youtubeChannelId,
         googleOauthVerified: request.googleOauthVerified,
-        discordOauthVerified: isTruthy(request.user.discordTokens?.discordId),
+        discordOauthVerified: isTruthy(user.discordTokens?.discordId),
     }
 
     response.json({ ok : true, data })

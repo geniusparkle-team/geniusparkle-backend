@@ -22,19 +22,15 @@ module.exports.signup = async (req, res) => {
     };
     if (!req.body.password) {
       error.push("password");
-    };
-    if (!req.body.birthday) {
-      error.push("birthday");
-    };
-    if (!req.body.gender) {
-      error.push("gender");
-    };
+    }
+
     if (!(error.length === 0)) {
       return res.status(400).json({
         ok: false,
         error: "Please input: " + error.join(', ')
       });
     };
+
     const email = await prisma.account.findUnique({
       where: { email: req.body.email }
     });
@@ -55,8 +51,6 @@ module.exports.signup = async (req, res) => {
           name: req.body.name,
           email: req.body.email,
           password: hashPass,
-          gender: req.body.gender,
-          birthday: new Date(req.body.birthday),
           tokenVerify: hashMail
         }
       });
