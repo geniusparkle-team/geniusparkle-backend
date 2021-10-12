@@ -76,11 +76,16 @@ const discordOauthCallback = async (request, response) => {
         return response.status(400).end('Invalid Response Received from Discord')
     }
 
-    let account = await prisma.account.findUnique({
+    let accounts = await prisma.account.findMany({
         where: {
-            email: userInfo.email
+            discordTokens: {
+                path: ['discordId'],
+                equals: userInfo.id,
+            },
         }
     })
+
+    let account = accounts.length > 0 ? account[0] : null
 
     if (!account && !tokens.refresh_token) {
         return response.status(400).end('Invalid Response Received from Discord')
