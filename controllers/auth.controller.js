@@ -22,19 +22,15 @@ module.exports.signup = async (req, res) => {
     };
     if (!req.body.password) {
       error.push("password");
-    };
-    if (!req.body.birthday) {
-      error.push("birthday");
-    };
-    if (!req.body.gender) {
-      error.push("gender");
-    };
+    }
+
     if (!(error.length === 0)) {
       return res.status(400).json({
         ok: false,
         error: "Please input: " + error.join(', ')
       });
     };
+
     const email = await prisma.account.findUnique({
       where: { email: req.body.email }
     });
@@ -55,8 +51,6 @@ module.exports.signup = async (req, res) => {
           name: req.body.name,
           email: req.body.email,
           password: hashPass,
-          gender: req.body.gender,
-          birthday: new Date(req.body.birthday),
           tokenVerify: hashMail
         }
       });
@@ -165,9 +159,6 @@ module.exports.resetPass = async (req, res) => {
   try {
     var error = [];
 
-    if (!req.body.email) {
-      error.push("email");
-    };
     if (!req.body.password) {
       error.push("password");
     };
@@ -178,18 +169,12 @@ module.exports.resetPass = async (req, res) => {
       });
     };
 
-    if (!(req.user.email === req.body.email)) {
-      return res.status(403).json({
-        ok: false,
-        error: "Access denied"
-      });
-    };
-    const email = await prisma.account.findUnique({
+    const account = await prisma.account.findUnique({
       where: {
-        email: req.body.email
+        email: req.user.email
       }
     });
-    if (email) {
+    if (account) {
       var salt = bcrypt.genSaltSync(10);
       var hashPass = bcrypt.hashSync(req.body.password, salt);
       const updateAccount = await prisma.account.update({
