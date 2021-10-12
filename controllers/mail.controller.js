@@ -54,6 +54,7 @@ module.exports.emailVerify = async (req, res) => {
         //redirect error page
       }
     } catch (error) {
+      console.log(error)
       res.status(403).json({ error: "UnAuthorized" })
     };
   }

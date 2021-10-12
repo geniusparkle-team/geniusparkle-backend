@@ -21,14 +21,13 @@ const corsMiddleware = cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Authentication'],
 })
 
-app.set('emails_views', path.resolve(__dirname, 'EmailTemplates'))
+app.set('emailsViews', path.resolve(__dirname, 'EmailTemplates'))
 app.enable('trust proxy')
 
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
-app.use(function (err, req, res, next) {
-    // error handling logic
+app.use((err, req, res, next) => {
     console.error(err.stack)
     res.status(500).json({ msg: 'something wrong' })
 })
