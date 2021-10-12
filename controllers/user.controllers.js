@@ -1,7 +1,7 @@
 const fs = require('fs')
 const { PrismaClient } = require('@prisma/client')
 
-const { getMimeType } = require('../helpers/files')
+const { getMimeType, resizeImage } = require('../helpers/files')
 const { uploadFile, deleteFile } = require('../helpers/storage')
 const { promiseWrapper, randomStr } = require('../utils/generic')
 
@@ -47,20 +47,22 @@ const uploadProfileImage = async (request, response) => {
     const { mimeType, ext } = await getMimeType(files.avatar.path)
 
     if (!mimeType.startsWith('image')) {
+        fs.unlinkSync(files.avatar.path)
+
         return response.status(400).json({
             ok: false,
             error: 'Uploaded file is not an image'
         })
     }
 
+    const [resizedFile] = await promiseWrapper(resizeImage(files.avatar.path))
+
     // upload file to cloud storage
     const [uploadedUrl, error] = await promiseWrapper(
-        uploadFile(`/avatars/${randomStr(20)}.${ext}`, mimeType, files.avatar.path)
+        uploadFile(`/avatars/${randomStr(20)}.${ext}`, resizedFile || files.avatar.path)
     )
 
     if (!uploadedUrl) {
-        const err = error?.response?.data || error
-        console.log('ERROR =>', JSON.stringify(err, null, 4))
         return response.status(500).json({
             ok: false,
             error: 'Something Went wrong'
@@ -81,7 +83,8 @@ const uploadProfileImage = async (request, response) => {
 
     await promiseWrapper(deleteFile(oldAvatar))
 
-    // delete file from file system
+    // delete files from file system
+    if (resizedFile) fs.unlinkSync(resizedFile)
     fs.unlinkSync(files.avatar.path)
 
     response.json({ ok : true })

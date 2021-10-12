@@ -1,7 +1,7 @@
 const fs = require('fs')
 const { default: axios } = require("axios")
 
-const uploadFile = async (filename, mimeType, filePath) => {
+const uploadFile = async (filename, filePath) => {
     const fileStream = fs.createReadStream(filePath)
 
     const data = {
