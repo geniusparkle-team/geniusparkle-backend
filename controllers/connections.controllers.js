@@ -32,10 +32,7 @@ const getUserPendingRequests = async (request, response) => {
         return data
     })
 
-    response.json({
-        items, 
-        ok: true,
-    })
+    response.json({ items, ok: true })
 }
 
 // Get connections requests sent to the current user
@@ -68,13 +65,33 @@ const getUserConnectionsRequests = async (request, response) => {
         return data
     })
 
-    response.json({
-        items, 
-        ok: true,
-    })
+    response.json({ items, ok: true })
 }
 
-const getUserConnections = (request, response) => {}
+const getUserConnections = async (request, response) => {
+    const { user } = request
+
+    const account = await prisma.account.findUnique({
+        where: { id: user.id },
+        select: {
+            connections: true,
+            connectionsRelation: true
+        }
+    })
+    
+    const connections = [...account.connections, ...account.connectionsRelation]
+    const connectionsFiltered = connections.map(user => {
+        const data = {}
+        data.id = user.id
+        data.name = user.name
+        data.gender = user.gender
+        data.avatar = user.avatar
+
+        return data
+    })
+
+    response.json({ ok: true, connections: connectionsFiltered })
+}
 
 const sendConnectionRequest = (request, response) => {}
 
