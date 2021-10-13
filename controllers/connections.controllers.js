@@ -39,7 +39,40 @@ const getUserPendingRequests = async (request, response) => {
 }
 
 // Get connections requests sent to the current user
-const getUserConnectionsRequests = (request, response) => {}
+const getUserConnectionsRequests = async (request, response) => {
+    const { user } = request
+
+    const requests = await prisma.connectionRequest.findMany({
+        where: {
+            toId: user.id,
+        },
+        select: {
+            id: true,
+            from: true,
+            to: false,
+            fromId: false,
+            toId: false,
+        }
+    })
+
+    const items = requests.map(connectionRequest => {
+        const { id, from } = connectionRequest
+        const data = {}
+        data.from = {}
+        data.id = id
+        data.from.id = from.id
+        data.from.name = from.name
+        data.from.avatar = from.avatar
+        data.from.gender = from.gender
+
+        return data
+    })
+
+    response.json({
+        items, 
+        ok: true,
+    })
+}
 
 const getUserConnections = (request, response) => {}
 
