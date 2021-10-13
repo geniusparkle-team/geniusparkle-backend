@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client')
+const { json } = require('express')
 
 const prisma = new PrismaClient()
 
@@ -95,7 +96,29 @@ const getUserConnections = async (request, response) => {
 
 const sendConnectionRequest = (request, response) => {}
 
-const deleteConnections = (request, response) => {}
+const deleteConnections = async (request, response) => {
+    const { user } = request
+    let { id:userId } = request.params
+
+    userId = Number(userId)
+
+    if (isNaN(userId) || userId <= 0) {
+        return response.status(400).json({
+            ok: false,
+            error: 'Invalid params'
+        })
+    }
+
+    const affected = await prisma.$executeRawUnsafe(
+        `DELETE FROM _connections WHERE ("A" = $1 AND "B" = $2) OR ("A" = $2 AND "B" = $1) ;`,
+        user.id,
+        userId
+    )
+
+    if (affected <= 0) response.status(400)
+
+    response.json({ ok: affected > 0 })
+}
 
 // Accept or reject a connection request
 const respondToRequest = (request, response) => {}
