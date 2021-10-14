@@ -109,19 +109,53 @@ const deleteConnections = async (request, response) => {
         })
     }
 
-    const affected = await prisma.$executeRawUnsafe(
+    const deleted = await prisma.$executeRawUnsafe(
         `DELETE FROM _connections WHERE ("A" = $1 AND "B" = $2) OR ("A" = $2 AND "B" = $1) ;`,
         user.id,
         userId
     )
 
-    if (affected <= 0) response.status(400)
+    if (deleted <= 0) response.status(400)
 
-    response.json({ ok: affected > 0 })
+    response.json({ ok: deleted > 0 })
 }
 
 // Accept or reject a connection request
-const respondToRequest = (request, response) => {}
+const respondToRequest = async (request, response) => {
+    const { user, body, params } = request
+    const { id } = params
+    const { accept } = body
+
+    if (typeof accept !== 'boolean') {
+        return response.json({
+            ok: false,
+            error: 'Accept field must be a boolean'
+        })
+    }
+
+    const connectionRequest = await prisma.connectionRequest.findUnique({
+        where: { id },
+        select: { fromId: true, toId: true }
+    })
+
+    if (!connectionRequest || connectionRequest.toId !== user.id) {
+        return response.status(404).json({ ok: false })
+    }
+        
+    if (accept) {
+        await prisma.$executeRawUnsafe(
+            `INSERT INTO _connections ("A", "B") VALUES ($1, $2);`,
+            connectionRequest.fromId,
+            connectionRequest.toId
+        )
+    }
+
+    await prisma.connectionRequest.delete({
+        where: { id },
+    })
+
+    return response.json({ ok: true })
+}
 
 module.exports = {
     getUserPendingRequests,
