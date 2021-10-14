@@ -100,7 +100,7 @@ const sendConnectionRequest = async (request, response) => {
 
     userId = Number(userId)
 
-    if (isNaN(userId) || userId <= 0) {
+    if (isNaN(userId) || userId <= 0 || userId === user.id) {
         return response.status(400).json({
             ok: false,
             error: 'Invalid user id'
@@ -160,14 +160,14 @@ const sendConnectionRequest = async (request, response) => {
         return response.status(404).json({ ok: false, error: 'User not found'})
     }
 
-    await prisma.connectionRequest.create({
+    const connectionRequest = await prisma.connectionRequest.create({
         data: {
             fromId: user.id,
             toId: userId
         }
     })
 
-    response.json({ ok : true })
+    response.json({ ok : true, id : connectionRequest.id })
 }
 
 const deleteConnections = async (request, response) => {
@@ -231,6 +231,27 @@ const respondToRequest = async (request, response) => {
     return response.json({ ok: true })
 }
 
+const deleteConnectionRequest = async (request, response) => {
+    const { user, params } = request
+    const { id } = params
+
+    const connectionRequest = await prisma.connectionRequest.findUnique({
+        where: { id },
+        select: { fromId: true, toId:true }
+    })
+
+    if (!connectionRequest || connectionRequest.fromId !== user.id) {
+        return response.status(404).json({
+            ok: true,
+            error: 'Connection request not found'
+        })
+    }
+
+    await prisma.connectionRequest.delete({ where: { id } })
+
+    return response.json({ ok:true })
+}
+
 module.exports = {
     getUserPendingRequests,
     getUserConnectionsRequests,
@@ -238,4 +259,5 @@ module.exports = {
     sendConnectionRequest,
     deleteConnections,
     respondToRequest,
+    deleteConnectionRequest
 }

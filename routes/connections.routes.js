@@ -7,6 +7,7 @@ const {
     deleteConnections,
     respondToRequest,
     sendConnectionRequest,
+    deleteConnectionRequest,
 } = require('../controllers/connections.controllers')
 
 const router = express.Router()
@@ -17,5 +18,6 @@ router.get('/pending', getUserPendingRequests)
 router.get('/requests', getUserConnectionsRequests)
 router.post('/requests', sendConnectionRequest)
 router.post('/requests/:id', respondToRequest)
+router.delete('/requests/:id', deleteConnectionRequest)
 
 module.exports = router
