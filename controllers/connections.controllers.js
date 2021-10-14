@@ -94,7 +94,81 @@ const getUserConnections = async (request, response) => {
     response.json({ ok: true, connections: connectionsFiltered })
 }
 
-const sendConnectionRequest = (request, response) => {}
+const sendConnectionRequest = async (request, response) => {
+    const { user, body } = request
+    let { userId } = body
+
+    userId = Number(userId)
+
+    if (isNaN(userId) || userId <= 0) {
+        return response.status(400).json({
+            ok: false,
+            error: 'Invalid user id'
+        })
+    }
+
+    if (user.type !== 'student') {
+        return response.status(400).json({
+            ok: false,
+            error: 'Non-students cannot request connection'
+        })
+    }
+
+    // Check if already connected
+    const alreadyConnected = await prisma.$executeRawUnsafe(
+        `SELECT * FROM _connections WHERE ("A" = $1 AND "B" = $2) OR ("A" = $2 AND "B" = $1) ;`,
+        user.id,
+        userId
+    )
+    
+    if (alreadyConnected > 0) {
+        return response.status(400).json({
+            ok: false,
+            error: 'Already connected'
+        })
+    }
+
+    // check if a request is already created by the receiver
+    const prevReqByReceiver = await prisma.connectionRequest.findFirst({
+        where: { AND: [ { fromId: userId }, { toId: user.id } ] }
+    })
+
+    if (prevReqByReceiver) {
+        await prisma.$executeRawUnsafe(
+            `INSERT INTO _connections ("A", "B") VALUES ($1, $2);`,
+            userId,
+            user.id
+        )
+
+        return response.json({ ok: true })
+    }
+
+    // Check if request is Already sent
+    const prevReqBySender = await prisma.connectionRequest.findFirst({
+        where: { AND: [ { fromId: user.id }, { toId: userId } ] }
+    })
+
+    if (prevReqBySender) {
+        return response.status(400).json({ ok: false, error: 'Request is already sent'})
+    }
+
+    const receiver = await prisma.account.findUnique({
+        where: { id: userId }
+    })
+
+    if (!receiver) {
+        return response.status(404).json({ ok: false, error: 'User not found'})
+    }
+
+    await prisma.connectionRequest.create({
+        data: {
+            fromId: user.id,
+            toId: userId
+        }
+    })
+
+    response.json({ ok : true })
+}
 
 const deleteConnections = async (request, response) => {
     const { user } = request
