@@ -10,6 +10,7 @@ const mailRouter = require('./routes/mail.routes')
 const userRouter = require('./routes/user.routes')
 const videosRouter = require('./routes/videos.routes')
 const connectionsRouter = require('./routes/connections.routes')
+const followsRouter = require('./routes/follows.routes')
 const { verrifyGoogleTokens } = require('./middlewares/google-oauth.middleware')
 const { authentication, authenticatedOnly } = require('./middlewares/auth.middleware')
 
@@ -49,6 +50,7 @@ app.use('/api/mail', mailRouter)
 app.use('/api/videos', authenticatedOnly, verrifyGoogleTokens, videosRouter)
 app.use('/api/user', authenticatedOnly, verrifyGoogleTokens, userRouter)
 app.use('/api/connections', authenticatedOnly, connectionsRouter)
+app.use('/api/follows', authenticatedOnly, followsRouter)
 
 app.listen(port, () => {
     console.log(`Server is listening on port ${port}`)
