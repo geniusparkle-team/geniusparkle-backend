@@ -156,6 +156,10 @@ const sendConnectionRequest = async (request, response) => {
         where: { id: userId }
     })
 
+    if (receiver.type !== 'student') {
+        return response.status(404).json({ ok: false, error: 'You cannot send request to non-students'})
+    }
+
     if (!receiver) {
         return response.status(404).json({ ok: false, error: 'User not found'})
     }
