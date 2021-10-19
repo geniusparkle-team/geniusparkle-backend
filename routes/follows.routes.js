@@ -7,6 +7,6 @@ const router = express.Router()
 router.get('/followers', followsControllers.getTeacherFollowers)
 router.get('/following', followsControllers.getFollowings)
 router.post('/following', followsControllers.followTeacher)
-router.delete('/following', followsControllers.unfollowTeacher)
+router.delete('/following/:id', followsControllers.unfollowTeacher)
 
 module.exports = router
