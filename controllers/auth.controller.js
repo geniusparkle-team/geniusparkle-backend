@@ -15,13 +15,13 @@ module.exports.signup = async (request, response) => {
     if (!body.name) {
         error.push('The name field is required')
     }
-    
+
     if (!body.email) {
         error.push('The email field is required')
     }
     
     if (!body.password) {
-        error.push('Yhe password field is required')
+        error.push('The password field is required')
     }
 
     if (error.length > 0) {
@@ -32,8 +32,8 @@ module.exports.signup = async (request, response) => {
     }
 
     const account = await prisma.account.findUnique({
-        where: { email: body.email },
-    })
+		where: { email: body.email }
+	})
 
     if (account) {
         return response.status(400).json({
@@ -43,14 +43,17 @@ module.exports.signup = async (request, response) => {
     }
 
     const hashPass = bcrypt.hashSync(body.password, 10)
-    const hashMail = bcrypt.hashSync(body.email, 10)
-    const tokenVerify = jwt.sign({ email: body.email }, process.env.secretOrKey, { expiresIn: 7200 })
-    await prisma.account.create({
+    const tokenVerify = jwt.sign(
+        { email: body.email, action: 'verify_email' },
+        process.env.secretOrKey,
+        { expiresIn: 7200 }
+    )
+   
+	await prisma.account.create({
         data: {
             name: body.name,
             email: body.email,
-            password: hashPass,
-            tokenVerify: hashMail,
+            password: hashPass
         },
     })
 
@@ -69,9 +72,9 @@ module.exports.signup = async (request, response) => {
         html: content,
     }
     
-    await transporter.sendMail(mailOptions)
-
-    return response.json({ ok: true, message: 'Signup successfully!' })
+    response.json({ ok: true, message: 'Signup successfully!' })
+    
+	await transporter.sendMail(mailOptions)
 }
 
 module.exports.login = async (req, res) => {

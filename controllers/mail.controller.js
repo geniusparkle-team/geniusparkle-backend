@@ -3,71 +3,53 @@ const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
 var bcrypt = require("bcryptjs");
 
-const transporter = require('../config/mail')
+const transporter = require('../config/mail');
+const { response } = require('express');
 
-module.exports.emailVerify = async (req, res) => {
-  try {
-    var error = [];
+module.exports.emailVerify = async (request, response) => {
+    const error = []
 
-    if (!req.query.token) {
-      error.push("Token not found.");
-    };
+    if (!request.query.token) {
+        error.push('Token not found.')
+    }
 
-    if (!(error.length === 0)) {
-      return res.status(400).json({
-        ok: false,
-        error: error
-      });
-    };
+    if (error.length > 0) {
+        return response.status(400).json({
+            ok: false,
+            error: error,
+        })
+    }
+
+    const token = request.query.token
+    let data
 
     try {
-      var token = req.query.token;
-      const data = jwt.verify(token, process.env.secretOrKey);
+        data = jwt.verify(token, process.env.secretOrKey)
+    } catch {
+        return response.json({ ok: false, error: 'Invalid token' })
+    }
 
-      const accountVerify = await prisma.account.findUnique({
-        where: { email: data.email }
-      });
-      if (accountVerify.verify) {
-        return res.status(400).json({
-          ok: false,
-          error: "Account was verified."
-        });
-      }
+    if (!data.email || data.action !== 'verify_email') {
+        return response.json({ ok: false, error: 'Invalid token' })
+    }
 
-      var isRightToken = bcrypt.compareSync(data.email, accountVerify.tokenVerify);
-      if (isRightToken) {
-        const updateAccount = await prisma.account.update({
-          where: {
-            email: data.email
-          },
-          data: {
-            verify: true,
-            tokenVerify: null
-          }
-        });
+    const account = await prisma.account.findUnique({
+        where: { email: data.email },
+    })
 
-        // Login automaticaly if verified
-        const accessToken = jwt.sign({ id : updateAccount.email }, process.env.secretOrKey)
-        return res.json({ ok: true, message: "Verify successfully!", accessToken });
-      } else {
-        return res.status(400).json({ ok: false, message: "Verify failed!" });
-        //redirect error page
-      }
-    } catch (error) {
-      console.log(error)
-      res.status(403).json({ error: "UnAuthorized" })
-    };
-  }
-  catch (error) {
-    res.status(500).json({
-      ok: false,
-      error: "Something went wrong!"
-    });
-  }
-  finally {
-    async () =>
-      await prisma.$disconnect()
-  }
+    if (account.verify) {
+        return response.status(400).json({
+            ok: false,
+            error: 'Account is already verified.',
+        })
+    }
+
+    await prisma.account.update({
+        where: { email: account.email },
+        data: { verify: true },
+    })
+
+    return response.json({ ok: true, message: 'Verify successfully!' })
 }
 
 module.exports.emailResetPass = async (req, res) => {
