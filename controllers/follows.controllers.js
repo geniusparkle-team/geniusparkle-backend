@@ -1,5 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 
+const { promiseWrapper } = require('../utils/generic')
+
 const prisma = new PrismaClient()
 
 const getTeacherFollowers = async (request, response) => {
@@ -71,7 +73,33 @@ const getFollowings = async (request, response) => {
     })
 }
 
-const followTeacher = (request, response) => {}
+const followTeacher = async (request, response) => {
+    const { user, body } = request
+    let { id:userId } = body
+
+    userId = Number(userId)
+
+    if (!userId || isNaN(userId) || userId <= 0) {
+        return response.json({
+            error: 'Invalid user id',
+            ok: false
+        })
+    }
+
+    const [created, error] = await promiseWrapper(prisma.follows.create({
+        data: { followerId: user.id, followingId: userId }
+    }))
+
+    if(user.id === userId) {
+        return response.json({ ok: false, error: 'You cannot follow yourself'})
+    }
+
+    if (error && error?.meta?.field_name === 'Follows_followingId_fkey (index)') {
+        return response.json({ ok: false, error: 'User not found'})
+    }
+
+    response.json({ ok:true })
+}
 
 const unfollowTeacher = async (request, response) => {
     const { user, params } = request
