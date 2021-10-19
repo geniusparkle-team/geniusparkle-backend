@@ -7,7 +7,7 @@ require('dotenv').config()
 // And configuring mail server for each request is very slow
 const transporter = nodemailer.createTransport(
     smtpTransport({
-        host: 'mail.geniusparkle.com',
+        host: process.env.EMAIL_HOST,
         secureConnection: false,
         tls: {
             rejectUnauthorized: false,
