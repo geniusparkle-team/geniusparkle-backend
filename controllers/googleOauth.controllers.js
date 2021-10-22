@@ -4,7 +4,8 @@ const { PrismaClient } = require('@prisma/client')
 
 const { getGoogleAccountInfo, getGoogleTokens } = require('../helpers/google-oauth')
 const { getChannelInfoOfToken } = require('../helpers/youtube-api')
-const { base64ToStr, promiseWrapper, strToBase64 } = require('../utils/generic')
+const { base64ToStr, promiseWrapper, strToBase64, randomStr } = require('../utils/generic')
+const transporter = require('../config/mail')
 
 const prisma = new PrismaClient()
 
@@ -184,7 +185,8 @@ const googleOauthConnect = async (request, response) => {
 // Login/Sign-up using oauth
 const googleOauthCallback = async (request, response) => {
     const { code, state } = request.query
-    let parsedState = null, finishedUrl = null
+    let parsedState = null, finishedUrl = null, rndPassword = null
+    let newAccount = false
 
     try {
         parsedState = JSON.parse(base64ToStr(state))
@@ -248,12 +250,14 @@ const googleOauthCallback = async (request, response) => {
             return response.end('Youtube Channel has already been connected to a account')
         }
 
+        rndPassword = randomStr(10)
+
         account = await prisma.account.create({
             data: {
                 name: profileData.name,
                 email: profileData.email,
                 verify: true,
-                password: bcrypt.hashSync('<Dont have password>', 10),
+                password: bcrypt.hashSync(rndPassword, 10),
                 youtubeChannelId: channelId,
                 youtubePlaylistId: playlistId,
                 avatar: profileData.picture,
@@ -269,6 +273,8 @@ const googleOauthCallback = async (request, response) => {
                 },
             },
         })
+
+        newAccount = true
     }
 
     const newGoogleTokens = {
@@ -294,10 +300,24 @@ const googleOauthCallback = async (request, response) => {
 
     if (finishedUrl) {
         finishedUrl.searchParams.set('token', token)
-        return response.redirect(finishedUrl.href)
+        response.redirect(finishedUrl.href)
+    } else {
+        response.end('Login has been done from Google')
     }
     
-    response.end('Login has been done from Google')
+    if (newAccount) {
+        // TODO : Add template from account created
+        const content = `Account created\n\temail : ${account.email}\npassword : ${rndPassword}`
+        const mailOptions = {
+            from: 'GeniuSparkle ' + '<' + process.env.EMAIL_USERNAME + '>',
+            to: account.email,
+            subject: 'Account Created Successfully',
+            text: '',
+            html: content,
+        }
+
+        await transporter.sendMail(mailOptions)
+    }
 }
 
 module.exports = {
