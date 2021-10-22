@@ -126,6 +126,10 @@ const updateYoutubeComment = async (id, content, access_token) => {
         },
     }
 
+    if (id.length > 26 && /^.+\..+$/.test(id)) {
+        data.snippet.parentId = id.split('.')[0]
+    }
+
     commentUrl.searchParams.append('part', 'snippet')
     commentUrl.searchParams.append('key', process.env.youtube_api_key)
     commentUrl.searchParams.append('access_token', access_token)
@@ -137,7 +141,7 @@ const updateYoutubeComment = async (id, content, access_token) => {
         }
     })
 
-    return response
+    return response.data
 }
 
 const deleteYoutubeComment = async (id, access_token) => {

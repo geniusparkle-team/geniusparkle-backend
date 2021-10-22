@@ -157,7 +157,7 @@ const addCommentReplay = async (request, response) => {
     responseData.comment.authorChannelUrl = data.snippet.authorChannelUrl
     responseData.comment.textOriginal = data.snippet.textOriginal
 
-    response.json(data)
+    response.json(responseData)
 }
 
 const deleteComment = async (request, response) => {
@@ -176,14 +176,14 @@ const deleteComment = async (request, response) => {
         })
     }
 
-    response.json({ ok: false })
+    response.json({ ok: true })
 }
 
-// TODO : this doesn't work as expected.
 const editComment = async (request, response) => {
     const { id } = request.params
     const { content } = request.body
     const { access_token } = request.user?.googleTokens || {}
+
 
     if (!content || content === '') {
         return response.status(404).json({
@@ -204,7 +204,7 @@ const editComment = async (request, response) => {
         })
     }
 
-    response.json({ ok: false })
+    response.json({ ok: true })
 }
 
 module.exports = {
