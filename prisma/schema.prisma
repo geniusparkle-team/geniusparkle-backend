@@ -7,7 +7,7 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["filterJson"]
 }
 
@@ -16,7 +16,7 @@ model account {
   name     String
   email    String      @unique @db.VarChar(45)
   password String      @db.VarChar(150)
-  birthday DateTime?    @db.Date
+  birthday DateTime?   @db.Date
   gender   Gender?     @default(unknow)
   isActive Boolean     @default(true)
   isAdmin  Boolean     @default(false)
@@ -24,8 +24,8 @@ model account {
   avatar   String?     @db.Text
   type     accountType @default(student)
 
-  otherData   String? @db.VarChar(150) // Useless field
-  note        String? @db.Text // No need for that
+  otherData String? @db.VarChar(150) // Useless field
+  note      String? @db.Text // No need for that
 
   updateDate DateTime @default(now()) @updatedAt @db.Timestamp(6)
   createDate DateTime @default(now()) @updatedAt @db.Timestamp(6)
@@ -44,6 +44,16 @@ model account {
 
   connectionsRequest     connectionRequest[] @relation("from")
   sentConnectionsRequest connectionRequest[] @relation("to")
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  token        String    @id @db.Text
+  user         account   @relation(fields: [user_id], references: [id])
+  user_id      Int
+  created_date DateTime  @default(now()) @db.Timestamptz
+  expires      DateTime? @db.Timestamptz
 }
 
 model Video {
