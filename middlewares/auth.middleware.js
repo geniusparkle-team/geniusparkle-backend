@@ -20,6 +20,9 @@ module.exports.authentication = async (req, res, next) => {
 
     try {
         const data = jwt.verify(token, process.env.secretOrKey)
+
+        if (data.action !== 'auth') return next()
+
         const user = await prisma.account.findUnique({
             where: {
                 email: data.id,

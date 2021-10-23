@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 const DAY = 24 * 60 * 60 * 1000
 const MONTH = 30 * DAY
 
-module.exports.signup = async (request, response) => {
+const signup = async (request, response) => {
     const { body } = request
     const error = []
 
@@ -81,7 +81,7 @@ module.exports.signup = async (request, response) => {
 	await transporter.sendMail(mailOptions)
 }
 
-module.exports.login = async (request, response) => {
+const login = async (request, response) => {
 	const { body } = request
 	const errors = []
 
@@ -119,7 +119,33 @@ module.exports.login = async (request, response) => {
 	})
 }
 
-module.exports.resetPass = async (req, res) => {
+const tokenRefresh = async (request, response) => {
+	const { body } = request
+
+	if (!body.refreshToken) {
+		return response.json({ ok: false, error: 'RefreshToken Field is required'})
+	}
+
+	const refreshToken = await prisma.refreshToken.findUnique({
+		where: { token: body.refreshToken },
+		select: { token: true, expires: true, user: true }
+	})
+
+	if (!refreshToken || refreshToken.expires.getTime() <= Date.now()) {
+		return response.json({ ok: false, error: 'Invalid refresh token'})
+	}
+
+	const accessToken = jwt.sign({ id: refreshToken.user.email, action: 'auth' }, process.env.secretOrKey, {
+		expiresIn: 15 * 60
+	})
+
+	response.json({
+		accessToken,
+		expiresIn: 15 * 60
+	})
+}
+
+const resetPass = async (req, res) => {
   try {
     var error = [];
 
@@ -165,4 +191,11 @@ module.exports.resetPass = async (req, res) => {
     async () =>
       await prisma.$disconnect()
   }
+}
+
+module.exports = {
+	signup,
+	login,
+	resetPass,
+	tokenRefresh
 }
