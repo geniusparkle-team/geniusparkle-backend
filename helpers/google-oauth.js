@@ -65,8 +65,18 @@ const refreshGoogleAccessToken = async (refresh_token) => {
     return response.data
 }
 
+const revokeGoogleToken = async (token) => {
+    const url = `https://oauth2.googleapis.com/revoke?token=${token}`
+    const response = await axios.post(url, null, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    })
+
+    return response.data
+}
+
 module.exports = {
     getGoogleTokens,
     getGoogleAccountInfo,
-    refreshGoogleAccessToken
+    refreshGoogleAccessToken,
+    revokeGoogleToken
 }
