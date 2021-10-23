@@ -1,12 +1,16 @@
 const path = require('path')
-var bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 
 const transporter = require('../config/mail');
 const { renderTemplate } = require('../utils/templates');
+const { randomStr } = require('../utils/generic');
 
 const prisma = new PrismaClient();
+
+const DAY = 24 * 60 * 60 * 1000
+const MONTH = 30 * DAY
 
 module.exports.signup = async (request, response) => {
     const { body } = request
@@ -77,65 +81,42 @@ module.exports.signup = async (request, response) => {
 	await transporter.sendMail(mailOptions)
 }
 
-module.exports.login = async (req, res) => {
-  try {
-    var error = [];
+module.exports.login = async (request, response) => {
+	const { body } = request
+	const errors = []
 
-    if (!req.body.email) {
-      error.push("email");
-    };
-    if (!req.body.password) {
-      error.push("password");
-    };
-    if (!(error.length === 0)) {
-      res.status(400).json({
-        ok: false,
-        error: "Please input: " + error.join(', ')
-      });
-    };
-    const account = await prisma.account.findUnique({
-      where: {
-        email: req.body.email
-      }
-    });
-    if (account) {
-      var isRightPass = bcrypt.compareSync(req.body.password, account.password);
-      if (isRightPass) {
-        // check verify
-        if (!account.verify) {
-          return res.status(400).json({
-            ok: false,
-            verify: false,
-            message: "The account is not verify yet!"
-          });
-        };
+	if (!body.email) errors.push('Email field is required')
+	if (!body.password) errors.push('Password field is required')
 
-        // create and assign a token
-        const token = jwt.sign({ id: account.email }, process.env.secretOrKey, {
-          expiresIn: 86400,
-        });
-        res.status(200).json({
-          ok: "true",
-          data: { token: "Bearer " + token }
-        });
-      } else {
-        res.status(400).json({ ok: false, message: "Wrong password!" })
-      }
-    } else {
-      res.status(400).json({ ok: false, message: "Wrong email!" });
-    }
-  }
-  catch (error) {
-    res.status(500).json({
-      ok: false,
-      error: "Something went wrong!"
-    });
+	if (errors.length > 0) {
+		return response.json({ ok : false, errors: errors})
+	}
 
-  }
-  finally {
-    async () =>
-      await prisma.$disconnect()
-  }
+	const account = await prisma.account.findUnique({
+		where : { email : body.email }
+	})
+
+	if (!account || !bcrypt.compareSync(body.password, account.password)) {
+		return response.json({ ok: false, error: 'Email or password is incorrect'})
+	}
+
+	const refreshToken = await prisma.refreshToken.create({
+		data: {
+			token: randomStr(50),
+			user_id: account.id,
+			expires: new Date(Date.now() + MONTH * 6)
+		}
+	})
+
+	const accessToken = jwt.sign({ id: account.email, action: 'auth' }, process.env.secretOrKey, {
+		expiresIn: 15 * 60
+	})
+
+	response.json({
+		accessToken,
+		refreshToken: refreshToken.token,
+		expiresIn: 15 * 60
+	})
 }
 
 module.exports.resetPass = async (req, res) => {

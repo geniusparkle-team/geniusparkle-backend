@@ -30,7 +30,11 @@ module.exports.authentication = async (req, res, next) => {
             req.token = token
             req.user = user
         }   
-    } catch (error) {}
+    } catch (error) {
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.json({ ok: false, error: 'jwt.expired_token' })
+        }
+    }
 
     next()
 }
