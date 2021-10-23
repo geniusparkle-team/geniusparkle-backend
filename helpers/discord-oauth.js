@@ -29,7 +29,17 @@ const getDiscordUserInfo = async (access_token) => {
     return response.data
 }
 
+const revokeDiscordToken = async (token) => {
+    const url = `https://discord.com/api/oauth2/token/revoke?token=${token}`
+    const response = await axios.post(url, null, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    })
+
+    return response.data
+}
+
 module.exports = {
     getDiscordTokens,
-    getDiscordUserInfo
+    getDiscordUserInfo,
+    revokeDiscordToken
 }
